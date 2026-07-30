@@ -16,32 +16,41 @@ the critical) and a **back line** (delayed care + evacuation staging).
 
 ---
 
-## The agent team
+## The agent team — all 8 built
 
-| Persona | Role | Status |
+| Persona | Role | Where |
 |---|---|---|
-| 🎯 **Triage** | Scans the scene image, detects casualties, reports observable START inputs | ✅ working (Gemini vision + offline sample scene) |
-| 🛰️ **Overseer** | Allocates the team front/back line and summarises for the commander | ✅ working |
-| 🩺 **Dr. Sentinel** | Clinical decision support per casualty | 🔜 prompt ready (`ai/prompts.py`) |
-| ✍️ Scribe · 🛡️ Guardian · 📦 Logistician · 🧭 Scout · 🏛️ Architect | see proposal | 🔜 roadmap |
+| 🧭 **Scout** | Reports scene hazards and a safe-approach recommendation + sector breakdown | `core/scout.py` |
+| 🎯 **Triage** | Scans the scene image, detects casualties + hazards, reports START inputs | `agents/triage_agent.py` |
+| 🩺 **Dr. Sentinel** | Per-casualty MARCH clinical prompts + NFC history summary & allergy/drug risk flags | `core/clinical.py` |
+| ✍️ **Scribe** | Treatment log from quick-adds + voice dictation; downloadable casualty report | frontend (Web Speech API) |
+| 🛡️ **Guardian** | Medic stress from real workload → break prompt, breathing exercise, calming tone | frontend |
+| 🛰️ **Overseer** | Allocates the team front/back line and summarises for the commander | `core/allocation.py` + route |
+| 📦 **Logistician** | Medical readiness (supplies have/need) + MEDEVAC plan | `core/logistics.py` |
+| 🏛️ **Architect** | After-action review compiled from the session + auto recommendations | frontend |
 
 The categorisation logic lives in [`backend/core/triage.py`](backend/core/triage.py)
 as an explicit, auditable START decision tree — **not** inside the model. The
 vision model only reports observations; the rule decides the category.
 
+Three roles, each with a tailored view: **Medic** (triage cards, body maps, NFC
+scan, clinical prompts, Scribe, Guardian), **Commander** (Scout, allocation,
+evacuation, readiness, Overseer, Architect AAR), **Soldier** (NFC medical record).
+
 ## Architecture
 
 ```
-camera / photo
+camera / photo / live webcam
       │
       ▼
-🎯 Triage agent  ──(observations JSON)──►  core/triage.py  (START scoring + rank)
-      │                                          │
-   (offline: sample scene)                       ▼
-                                          core/allocation.py  (front / back line)
-                                                 │
-                                                 ▼
-                                          🛰️ Overseer summary  ──►  dashboard
+🧭 Scout ◄─ hazards ─ 🎯 Triage agent ─(observations JSON)─► core/triage.py (START rank)
+                            │                                        │
+                     (offline: sample scene)                        ▼
+   🩺 Dr. Sentinel ◄─ NFC brief ── /api/soldiers/{id}/brief    core/allocation.py (front/back)
+                                                                     │
+   📦 Logistician (readiness + evac) ◄───────────────────────────────┤
+                                                                     ▼
+   ✍️ Scribe · 🛡️ Guardian (medic view)          🛰️ Overseer + 🏛️ Architect (commander) ─► dashboard
 ```
 
 ## Run it
