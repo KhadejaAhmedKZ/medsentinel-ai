@@ -11,7 +11,8 @@ from backend.agents.base import Persona
 from backend.agents.triage_agent import ALLOWED_MIME_TYPES, MAX_IMAGE_BYTES, triage_agent
 from backend.ai.gemini_client import gemini
 from backend.ai.prompts import OVERSEER
-from backend.core import allocation, triage
+from backend.core import allocation, logistics, triage
+from backend.core.clinical import soldier_brief
 from backend.core.soldiers import BY_ID, SOLDIERS
 from backend.schemas import ScanResponse
 
@@ -28,7 +29,16 @@ class Overseer(Persona):
 
 overseer = Overseer()
 
-_AGENT_CARDS = [triage_agent.card(), overseer.card()]
+# The full digital team surfaced in the UI (some are deterministic modules
+# rather than LLM agents, but they are all "team members" to the user).
+_AGENT_CARDS = [
+    triage_agent.card(),
+    {"name": "Dr. Sentinel", "emoji": "🩺", "role": "Clinical decision support"},
+    {"name": "Scribe", "emoji": "✍️", "role": "Voice notes into a report"},
+    {"name": "Guardian", "emoji": "🛡️", "role": "Medic stress & wellbeing"},
+    overseer.card(),
+    {"name": "Logistician", "emoji": "📦", "role": "Readiness & evacuation"},
+]
 
 
 @router.get("/health")
@@ -52,6 +62,19 @@ async def soldier(soldier_id: str) -> dict:
     if not s:
         raise HTTPException(404, "Soldier not found")
     return s
+
+
+@router.get("/soldiers/{soldier_id}/brief")
+async def soldier_brief_route(soldier_id: str) -> dict:
+    """Dr. Sentinel's read of an NFC-scanned profile: summary + risk flags."""
+    s = BY_ID.get(soldier_id)
+    if not s:
+        raise HTTPException(404, "Soldier not found")
+    brief = soldier_brief(s)
+    brief["id"] = s["id"]
+    brief["name"] = s["name"]
+    brief["blood_type"] = s["blood_type"]
+    return brief
 
 
 @router.post("/scan", response_model=ScanResponse)
@@ -80,8 +103,10 @@ async def scan(
     ranked = triage.triage_all(casualties)
     summary = triage.summarize(ranked)
 
-    # 3. Allocate the team front/back line.
+    # 3. Allocate the team front/back line + Logistician readiness / evac.
     plan = allocation.allocate(ranked, front_medics, back_medics)
+    readiness = logistics.assess_readiness(ranked)
+    evacuation = logistics.plan_evacuation(ranked)
 
     # 4. Overseer one-liner for the commander (AI if online, else a local line).
     overseer_text = _local_overseer(summary, plan)
@@ -103,6 +128,8 @@ async def scan(
         casualties=[c.to_dict() for c in ranked],
         allocation=plan,
         overseer=overseer_text,
+        readiness=readiness,
+        evacuation=evacuation,
         agents=_AGENT_CARDS,
     )
 

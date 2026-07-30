@@ -10,7 +10,7 @@
     --line: #26303d; --line2: #33404f;
     --text: #e6edf3; --muted: #8b97a6; --dim: #5c6673;
     --accent: #46c0e6; --accent2: #2a8fb8;
-    --red: #f2495c; --yellow: #e3b341; --green: #3fb950; --black: #6e7681;
+    --red: #f2495c; --yellow: #e3b341; --orange: #e0864b; --green: #3fb950; --black: #6e7681;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; }
@@ -28,69 +28,58 @@
   .accent { color: var(--accent); }
 
   /* ---------- LOGIN ---------- */
-  #login {
-    min-height: 100vh; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; padding: 24px; gap: 8px;
-  }
+  #login { min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; padding: 24px; gap: 8px; }
   .brand { font-size: 30px; font-weight: 800; letter-spacing: 3px; }
   .brand span { color: var(--accent); }
   .sub { color: var(--muted); font-size: 14px; margin-bottom: 22px; letter-spacing: .5px; }
-  .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-           max-width: 760px; width: 100%; }
+  .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 760px; width: 100%; }
   @media (max-width: 720px){ .roles { grid-template-columns: 1fr; } }
-  .role {
-    background: linear-gradient(180deg, var(--panel), var(--bg2));
+  .role { background: linear-gradient(180deg, var(--panel), var(--bg2));
     border: 1px solid var(--line); border-radius: 16px; padding: 22px 20px;
-    text-align: left; transition: .15s; color: var(--text);
-  }
-  .role:hover { border-color: var(--accent); transform: translateY(-3px);
-                box-shadow: 0 12px 30px rgba(0,0,0,.35); }
+    text-align: left; transition: .15s; color: var(--text); }
+  .role:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.35); }
   .role .ico { font-size: 30px; }
   .role h3 { margin: 12px 0 6px; font-size: 18px; }
   .role p { margin: 0; color: var(--muted); font-size: 13px; }
-  .namebox { margin-top: 22px; display: flex; gap: 8px; }
-  .namebox input {
-    background: var(--panel2); border: 1px solid var(--line); color: var(--text);
-    border-radius: 10px; padding: 10px 14px; font-size: 14px; width: 230px;
-  }
-  .disclaimer { color: var(--dim); font-size: 12px; margin-top: 26px;
-                max-width: 560px; text-align: center; }
+  .team { color: var(--dim); font-size: 12px; margin-top: 20px; }
+  .namebox { margin-top: 14px; display: flex; gap: 8px; }
+  .namebox input { background: var(--panel2); border: 1px solid var(--line); color: var(--text);
+    border-radius: 10px; padding: 10px 14px; font-size: 14px; width: 230px; }
+  .disclaimer { color: var(--dim); font-size: 12px; margin-top: 22px; max-width: 560px; text-align: center; }
 
   /* ---------- APP SHELL ---------- */
   #app { display: none; min-height: 100vh; }
-  header {
-    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  header { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
     padding: 12px 20px; background: rgba(20,27,36,.8); backdrop-filter: blur(8px);
-    border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20;
-  }
+    border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 20; }
   header .logo { font-weight: 800; letter-spacing: 2px; font-size: 16px; }
   header .logo span { color: var(--accent); }
   .role-pill { font-size: 12px; padding: 4px 12px; border-radius: 20px;
-               background: var(--panel2); border: 1px solid var(--line2); }
+    background: var(--panel2); border: 1px solid var(--line2); }
   .badge { font-size: 12px; padding: 4px 10px; border-radius: 20px; }
   .badge.on { background: rgba(63,185,80,.15); color: var(--green); }
   .badge.off { background: rgba(110,118,129,.2); color: var(--muted); }
   .spacer { margin-left: auto; }
   .ghost { background: transparent; border: 1px solid var(--line2); color: var(--muted);
-           padding: 6px 12px; border-radius: 8px; font-size: 13px; }
+    padding: 6px 12px; border-radius: 8px; font-size: 13px; }
   .ghost:hover { color: var(--text); border-color: var(--accent); }
 
   .wrap { max-width: 1180px; margin: 0 auto; padding: 22px; }
 
-  .controls {
-    display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px;
-  }
+  .controls { display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
   .field { display: flex; flex-direction: column; gap: 5px; }
   .field label { font-size: 12px; color: var(--muted); }
-  .field input[type=number] { width: 84px; background: var(--panel2);
-    border: 1px solid var(--line); color: var(--text); border-radius: 8px;
-    padding: 9px; font-size: 15px; }
+  .field input[type=number] { width: 84px; background: var(--panel2); border: 1px solid var(--line);
+    color: var(--text); border-radius: 8px; padding: 9px; font-size: 15px; }
   input[type=file] { color: var(--muted); font-size: 13px; max-width: 240px; }
-  .btn { background: linear-gradient(180deg, var(--accent), var(--accent2));
-    color: #04222c; border: 0; font-weight: 700; padding: 11px 22px;
-    border-radius: 10px; font-size: 14px; }
+  .btn { background: linear-gradient(180deg, var(--accent), var(--accent2)); color: #04222c;
+    border: 0; font-weight: 700; padding: 11px 22px; border-radius: 10px; font-size: 14px; }
   .btn:disabled { opacity: .55; cursor: wait; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 8px; font-weight: 600;
+    border: 1px solid var(--line2); background: var(--panel2); color: var(--text); }
+  .btn-sm:hover { border-color: var(--accent); }
 
   .overseer { margin: 20px 0; padding: 15px 18px; border-radius: 12px;
     background: linear-gradient(180deg, rgba(70,192,230,.10), rgba(70,192,230,.03));
@@ -128,6 +117,7 @@
     margin-bottom: 12px; border-radius: 10px; background: var(--panel2); }
   .cas.RED{border-left-color:var(--red);} .cas.YELLOW{border-left-color:var(--yellow);}
   .cas.GREEN{border-left-color:var(--green);} .cas.BLACK{border-left-color:var(--black);}
+  .cas.treated { opacity: .72; }
   .cas .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .cas .id { font-weight: 800; font-size: 15px; }
   .cat { font-size: 11px; font-weight: 800; padding: 3px 9px; border-radius: 20px; white-space: nowrap; }
@@ -143,14 +133,67 @@
     border: 1px solid rgba(70,192,230,.18); border-radius: 8px; padding: 9px 11px; }
   .tip b { color: var(--accent); }
 
+  .subpanel { margin-top: 12px; border-top: 1px dashed var(--line2); padding-top: 12px; }
+  .subpanel .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); font-weight: 700; margin-bottom: 8px; }
+  .tagrow { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .tagrow .hint { color: var(--dim); font-size: 12px; }
+
+  /* NFC identity */
+  .nfc { background: var(--panel); border: 1px solid var(--line2); border-radius: 10px; padding: 12px; }
+  .nfc .who { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .nfc .who .nm { font-weight: 800; }
+  .nfc .who .bl { color: var(--red); font-weight: 800; font-size: 18px; }
+  .risk { border-radius: 8px; padding: 8px 10px; margin-top: 8px; font-size: 12.5px; }
+  .risk.critical { background: rgba(242,73,92,.12); border: 1px solid rgba(242,73,92,.35); color: #ffb3bc; }
+  .risk.caution { background: rgba(227,179,65,.10); border: 1px solid rgba(227,179,65,.3); color: #f2d68a; }
+  .contact { color: var(--muted); font-size: 12px; margin-top: 8px; }
+
+  /* Scribe */
+  .notes { margin-top: 8px; }
+  .note { display: flex; gap: 8px; font-size: 12.5px; padding: 4px 0; border-bottom: 1px solid var(--line); }
+  .note .t { color: var(--dim); font-variant-numeric: tabular-nums; }
+  .noteinput { display: flex; gap: 6px; margin-top: 8px; }
+  .noteinput input { flex: 1; background: var(--panel); border: 1px solid var(--line2);
+    color: var(--text); border-radius: 8px; padding: 7px 10px; font-size: 13px; }
+  .rec { color: var(--red); }
+  .rec.live { animation: blink 1s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .3; } }
+
+  .actionrow { display: flex; gap: 8px; margin-top: 12px; }
+  .treated-tag { color: var(--green); font-size: 13px; font-weight: 700; }
+
+  /* Guardian */
+  .guardian { display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+    padding: 14px 18px; border-radius: 12px; margin-bottom: 18px;
+    border: 1px solid var(--line2); background: var(--panel); }
+  .guardian .g-ico { font-size: 22px; }
+  .stress { font-weight: 800; }
+  .stress.steady{color:var(--green);} .stress.moderate{color:var(--yellow);}
+  .stress.elevated{color:var(--orange);} .stress.high{color:var(--red);}
+  .g-msg { color: var(--muted); font-size: 13px; }
+  .g-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+
+  /* Evacuation + Readiness */
+  .evline { display: flex; justify-content: space-between; gap: 10px; padding: 9px 12px;
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; margin-bottom: 8px; font-size: 13px; }
+  .prec { font-weight: 800; font-size: 11px; padding: 2px 8px; border-radius: 20px; }
+  .prec.URGENT { background: var(--red); color: #fff; }
+  .prec.ROUTINE { background: var(--panel); color: var(--muted); border: 1px solid var(--line2); }
+  .ready-row { margin-bottom: 12px; }
+  .ready-row .r-top { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .bar { height: 8px; background: var(--panel2); border-radius: 6px; overflow: hidden; border: 1px solid var(--line); }
+  .bar > i { display: block; height: 100%; }
+  .st-ok{color:var(--green);} .st-low{color:var(--yellow);} .st-critical{color:var(--red);}
+  .fill-ok{background:var(--green);} .fill-low{background:var(--yellow);} .fill-critical{background:var(--red);}
+
   /* allocation */
   .line-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
   @media (max-width: 880px){ .line-col { grid-template-columns: 1fr; } }
   .line-hd { font-size: 15px; margin-bottom: 10px; }
   .front-hd{color:var(--red);} .back-hd{color:var(--yellow);}
   .assign { display: flex; justify-content: space-between; gap: 10px; padding: 10px 13px;
-    background: var(--panel2); border: 1px solid var(--line); border-radius: 9px;
-    margin-bottom: 8px; font-size: 13px; }
+    background: var(--panel2); border: 1px solid var(--line); border-radius: 9px; margin-bottom: 8px; font-size: 13px; }
   .assign .medic { font-weight: 700; }
   .assign .to { color: var(--muted); text-align: right; }
 
@@ -174,6 +217,15 @@
     padding: 8px 14px; border-radius: 20px; font-size: 13px; }
   .selectrow button.active { border-color: var(--accent); color: var(--text); }
 
+  /* Breathing modal */
+  .overlay { position: fixed; inset: 0; background: rgba(6,9,14,.88); z-index: 50;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; }
+  .breathe { width: 150px; height: 150px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(70,192,230,.55), rgba(70,192,230,.08));
+    border: 2px solid var(--accent); animation: breathe 8s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { transform: scale(.6); } 50% { transform: scale(1.25); } }
+  .breathe-txt { font-size: 20px; letter-spacing: 1px; }
+
   .empty { text-align: center; color: var(--muted); padding: 40px 16px; }
   .foot { color: var(--dim); font-size: 12px; margin: 30px auto 10px; text-align: center;
     border-top: 1px solid var(--line); padding-top: 16px; max-width: 900px; }
@@ -190,20 +242,19 @@
   <div class="roles">
     <button class="role" onclick="login('medic')">
       <div class="ico">🎯</div><h3>Medic <span class="accent">· front line</span></h3>
-      <p>Treat casualties. Ranked triage cards, per-casualty body maps and Dr. Sentinel clinical prompts.</p>
+      <p>Triage cards, body maps, NFC scan, Dr. Sentinel prompts, voice documentation and Guardian support.</p>
     </button>
     <button class="role" onclick="login('commander')">
       <div class="ico">🛰️</div><h3>Commander</h3>
-      <p>See the whole picture. Casualty counts, live team allocation and the Overseer situation summary.</p>
+      <p>Casualty counts, team allocation, evacuation status, medical readiness and the Overseer summary.</p>
     </button>
     <button class="role" onclick="login('soldier')">
       <div class="ico">🪖</div><h3>Soldier</h3>
       <p>Your medical record — the profile a medic unlocks when they scan your NFC tag.</p>
     </button>
   </div>
-  <div class="namebox">
-    <input id="nameInput" placeholder="Your name (optional)" />
-  </div>
+  <div class="team">Digital team: 🎯 Triage · 🩺 Dr. Sentinel · ✍️ Scribe · 🛡️ Guardian · 🛰️ Overseer · 📦 Logistician</div>
+  <div class="namebox"><input id="nameInput" placeholder="Your name (optional)" /></div>
   <div class="disclaimer">
     Simulation / training decision-support prototype for START mass-casualty triage.
     A qualified human medic is responsible for every triage and treatment decision.
@@ -227,58 +278,57 @@
     A human medic owns every decision. Simulation / training use only.
   </div>
 </div>
+<div id="modal"></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
-const API = ""; // same origin
+const API = "";
 const state = { role: null, name: "", scan: null, aiOnline: false,
-                soldiers: [], soldierId: null };
+  soldiers: [], soldierId: null,
+  notes: {}, nfc: {}, treated: {},
+  workload: { start: Date.now(), cases: 0, reds: 0 } };
 let lastImageURL = null, lastHadImage = false;
+let recog = null, recogFor = null;
 
 const ROLE_LABEL = { medic: "🎯 Medic · front line", commander: "🛰️ Commander", soldier: "🪖 Soldier" };
+const MOTIVATION = [
+  "That was a tough one. You did what the training built you for.",
+  "You can't save everyone — you gave them the best chance. That matters.",
+  "Steady hands, clear head. Take the next one when you're ready.",
+  "Every casualty you stabilised is someone going home. Well done.",
+];
 
 async function boot() {
-  try {
-    const d = await (await fetch(API + "/api/agents")).json();
-    state.aiOnline = d.ai_online;
-  } catch (e) { state.aiOnline = false; }
+  try { state.aiOnline = (await (await fetch(API+"/api/agents")).json()).ai_online; }
+  catch (e) { state.aiOnline = false; }
 }
 boot();
 
 function login(role) {
-  state.role = role;
-  state.name = $("nameInput").value.trim();
-  $("login").style.display = "none";
-  $("app").style.display = "block";
+  state.role = role; state.name = $("nameInput").value.trim();
+  state.workload.start = Date.now();
+  $("login").style.display = "none"; $("app").style.display = "block";
   $("rolePill").textContent = ROLE_LABEL[role];
-  $("whoami").textContent = state.name ? state.name : "";
+  $("whoami").textContent = state.name || "";
   const b = $("aiBadge");
   b.textContent = state.aiOnline ? "AI online" : "Offline mode";
   b.className = "badge " + (state.aiOnline ? "on" : "off");
   renderView();
 }
-function logout() {
-  state.role = null;
-  $("app").style.display = "none";
-  $("login").style.display = "flex";
-}
+function logout() { stopDictation(); state.role = null;
+  $("app").style.display = "none"; $("login").style.display = "flex"; }
 
 function renderView() {
   if (state.role === "soldier") return renderSoldier();
-  // medic + commander share the scan
-  const v = $("view");
-  v.innerHTML = scanControls() + `<div id="results"></div>`;
+  $("view").innerHTML = scanControls() + `<div id="results"></div>`;
   if (state.scan) renderResults();
 }
 
-/* ---------------- scan controls ---------------- */
+/* ---------------- scan ---------------- */
 function scanControls() {
-  return `
-  <div class="controls">
-    <div class="field">
-      <label>Scene photo (optional — blank uses the sample scene)</label>
-      <input type="file" id="file" accept="image/*" />
-    </div>
+  return `<div class="controls">
+    <div class="field"><label>Scene photo (optional — blank uses the sample scene)</label>
+      <input type="file" id="file" accept="image/*" /></div>
     <div class="field"><label>Front-line medics</label>
       <input type="number" id="front" value="2" min="0" max="50" /></div>
     <div class="field"><label>Back-line medics</label>
@@ -286,27 +336,24 @@ function scanControls() {
     <button class="btn" id="scanBtn" onclick="doScan()">Scan scene</button>
   </div>`;
 }
-
 async function doScan() {
   const btn = $("scanBtn"); btn.disabled = true; btn.textContent = "Scanning…";
   const fd = new FormData();
-  const f = $("file").files[0];
-  lastHadImage = !!f;
+  const f = $("file").files[0]; lastHadImage = !!f;
   if (f) { fd.append("image", f); lastImageURL = URL.createObjectURL(f); }
   fd.append("front_medics", $("front").value || 0);
   fd.append("back_medics", $("back").value || 0);
   try {
-    const r = await fetch(API + "/api/scan", { method: "POST", body: fd });
+    const r = await fetch(API+"/api/scan", { method: "POST", body: fd });
     if (!r.ok) throw new Error(await r.text());
     state.scan = await r.json();
     renderResults();
   } catch (e) { alert("Scan failed: " + e.message); }
   finally { btn.disabled = false; btn.textContent = "Scan scene"; }
 }
-
 function renderResults() {
   $("results").innerHTML = state.role === "medic" ? medicResults() : commanderResults();
-  drawScene(); // no-op if no scene element
+  drawScene();
 }
 
 /* ---------------- commander ---------------- */
@@ -316,28 +363,43 @@ function commanderResults() {
     <div class="overseer"><b>🛰️ Overseer:</b> ${esc(d.overseer)}</div>
     <div class="chips">${chip("RED","Immediate",c.RED)}${chip("YELLOW","Delayed",c.YELLOW)}${chip("GREEN","Minor",c.GREEN)}${chip("BLACK","Expectant",c.BLACK)}</div>
     <div class="grid2">
-      <div class="card">
-        <h2>Scene · triage overlay</h2>
-        <div class="scene" id="scene"></div>
-        <div class="legend">
-          <span><i style="background:var(--red)"></i>Immediate</span>
-          <span><i style="background:var(--yellow)"></i>Delayed</span>
-          <span><i style="background:var(--green)"></i>Minor</span>
-          <span><i style="background:var(--black)"></i>Expectant</span>
-        </div>
-        <p style="font-size:12px;color:var(--muted)">${esc(d.scene_note||"")}</p>
-      </div>
+      <div class="card"><h2>Scene · triage overlay</h2><div class="scene" id="scene"></div>
+        <div class="legend"><span><i style="background:var(--red)"></i>Immediate</span>
+        <span><i style="background:var(--yellow)"></i>Delayed</span>
+        <span><i style="background:var(--green)"></i>Minor</span>
+        <span><i style="background:var(--black)"></i>Expectant</span></div>
+        <p style="font-size:12px;color:var(--muted)">${esc(d.scene_note||"")}</p></div>
       <div class="card"><h2>Casualties · most urgent first</h2>${d.casualties.map(casRow).join("")}</div>
     </div>
-    <div class="card" style="margin-top:20px"><h2>Team allocation</h2>${allocation(d.allocation)}</div>`;
+    <div class="card" style="margin-top:20px"><h2>Team allocation</h2>${allocation(d.allocation)}</div>
+    <div class="grid2" style="margin-top:20px">
+      <div class="card"><h2>📦 Evacuation status</h2>${evacuation(d.evacuation)}</div>
+      <div class="card"><h2>📦 Medical readiness — <span class="st-${d.readiness.status}">${d.readiness.status.toUpperCase()}</span></h2>${readiness(d.readiness)}</div>
+    </div>`;
 }
 function casRow(c) {
   return `<div class="cas ${c.category}">
     <div class="top"><span class="id">${c.id} · priority ${c.priority}</span>
       <span class="cat ${c.category}">${c.category} · ${c.label}</span></div>
     <div class="why">${esc(c.rationale)}</div>
-    ${c.note ? `<div class="why">“${esc(c.note)}”</div>` : ""}
-    ${signList(c.signs)}</div>`;
+    ${c.note ? `<div class="why">“${esc(c.note)}”</div>` : ""}${signList(c.signs)}</div>`;
+}
+function evacuation(e) {
+  const head = `<div style="font-size:13px;color:var(--muted);margin-bottom:10px">
+    ${e.urgent} urgent · ${e.routine} routine · ${e.litters_required} litters required</div>`;
+  if (!e.lines.length) return head + `<div class="assign"><span class="to">No casualties requiring evacuation.</span></div>`;
+  return head + e.lines.map(l => `<div class="evline">
+    <span><b>${l.casualty_id}</b> · ${esc(l.status)}</span>
+    <span><span class="prec ${l.precedence}">${l.precedence}</span>${l.eta_min!=null?` · ETA ${l.eta_min}m`:""}</span></div>`).join("");
+}
+function readiness(r) {
+  return r.items.map(i => {
+    const cover = i.need ? Math.min(i.have / i.need, 1) : 1;
+    return `<div class="ready-row">
+      <div class="r-top"><span>${esc(i.item)}</span>
+        <span class="st-${i.status}">${i.have} / ${i.need||0} needed</span></div>
+      <div class="bar"><i class="fill-${i.status}" style="width:${Math.round(cover*100)}%"></i></div></div>`;
+  }).join("");
 }
 
 /* ---------------- medic ---------------- */
@@ -345,45 +407,208 @@ function medicResults() {
   const d = state.scan, c = d.summary.counts;
   const mine = d.allocation.assignments.filter(a => a.line === "front");
   return `
+    ${guardianPanel()}
     <div class="overseer"><b>🎯 Your front line:</b> ${mine.length
       ? mine.map(a=>`<b>${esc(a.medic)}</b> → ${a.casualty_id}`).join(", ")
-      : "No immediate casualties assigned."} </div>
+      : "No immediate casualties assigned."}</div>
     <div class="chips">${chip("RED","Immediate",c.RED)}${chip("YELLOW","Delayed",c.YELLOW)}${chip("GREEN","Minor",c.GREEN)}${chip("BLACK","Expectant",c.BLACK)}</div>
-    <div class="card"><h2>Casualties · treat most urgent first</h2>
-      ${d.casualties.map(medicCard).join("")}</div>`;
+    <div class="card"><h2>Casualties · treat most urgent first</h2>${d.casualties.map(medicCard).join("")}</div>`;
 }
 function medicCard(c) {
-  return `<div class="cas ${c.category}">
+  const treated = state.treated[c.id];
+  return `<div class="cas ${c.category} ${treated?'treated':''}">
     <div class="top"><span class="id">${c.id} · priority ${c.priority}</span>
       <span class="cat ${c.category}">${c.category} · ${c.label}</span></div>
     <div class="why">${esc(c.rationale)}</div>
-    ${c.note ? `<div class="why">“${esc(c.note)}”</div>` : ""}
-    ${signList(c.signs)}
-    <div class="medbody">
-      <div class="bodywrap">${bodyMap(c.regions, catColor(c.category))}</div>
-      <div class="tip"><b>🩺 Dr. Sentinel:</b> ${esc(c.clinical_tip)}</div>
+    ${c.note ? `<div class="why">“${esc(c.note)}”</div>` : ""}${signList(c.signs)}
+    <div class="medbody"><div class="bodywrap">${bodyMap(c.regions, catColor(c.category))}</div>
+      <div class="tip"><b>🩺 Dr. Sentinel:</b> ${esc(c.clinical_tip)}</div></div>
+    ${nfcPanel(c)}
+    ${scribePanel(c)}
+    <div class="actionrow">
+      ${treated ? `<span class="treated-tag">✓ Treated &amp; documented</span>`
+                : `<button class="btn-sm" onclick="markTreated('${c.id}','${c.category}')">Mark treated</button>`}
+      <button class="btn-sm" onclick="generateReport('${c.id}')">📄 Generate report</button>
     </div></div>`;
 }
 
-/* ---------------- shared bits ---------------- */
+/* NFC */
+function nfcPanel(c) {
+  const b = state.nfc[c.id];
+  if (!b) {
+    return `<div class="subpanel"><div class="lbl">🔗 NFC identification</div>
+      <div class="tagrow"><span class="hint">Tap the casualty's tag:</span>
+      ${state.soldiers.map(s=>`<button class="btn-sm" onclick="nfcScan('${c.id}','${s.id}')">${esc(s.name)}</button>`).join("")}</div></div>`;
+  }
+  return `<div class="subpanel"><div class="lbl">🔗 NFC identity · Dr. Sentinel</div>
+    <div class="nfc"><div class="who"><span class="nm">${esc(b.name)} <small style="color:var(--muted)">· ${esc(b.id)}</small></span>
+      <span class="bl">${esc(b.blood_type)}</span></div>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:4px">${esc(b.summary)}</div>
+      ${b.risks.map(r=>`<div class="risk ${r.level}">${esc(r.text)}</div>`).join("")}
+      ${b.emergency_contact?`<div class="contact">📞 Emergency contact: ${esc(b.emergency_contact.name)} · ${esc(b.emergency_contact.phone)}</div>`:""}
+    </div></div>`;
+}
+async function nfcScan(casualtyId, soldierId) {
+  try {
+    const b = await (await fetch(API+`/api/soldiers/${soldierId}/brief`)).json();
+    state.nfc[casualtyId] = b; renderResults();
+  } catch (e) { alert("NFC read failed: " + e.message); }
+}
+
+/* Scribe */
+function scribePanel(c) {
+  const dictating = recogFor === c.id;
+  return `<div class="subpanel"><div class="lbl">✍️ Scribe · treatment log</div>
+    <div id="notes-${c.id}">${notesHTML(c.id)}</div>
+    <div class="tagrow" style="margin-top:8px">
+      ${["Tourniquet applied","Airway cleared","IV access","Pressure dressing","Analgesia given","Ready for evac"]
+        .map(q=>`<button class="btn-sm" onclick="addNote('${c.id}','${q}')">${q}</button>`).join("")}
+    </div>
+    <div class="noteinput">
+      <input id="ni-${c.id}" placeholder="Type or dictate a note…" onkeydown="if(event.key==='Enter'){addNote('${c.id}',this.value);this.value='';}"/>
+      <button class="btn-sm ${dictating?'rec live':''}" onclick="toggleDictation('${c.id}')">
+        ${dictating?'⏹ Stop':'🎙️ Dictate'}</button>
+    </div></div>`;
+}
+function notesHTML(id) {
+  const arr = state.notes[id] || [];
+  if (!arr.length) return `<div style="color:var(--dim);font-size:12px">No entries yet.</div>`;
+  return `<div class="notes">${arr.map(n=>`<div class="note"><span class="t">${n.t}</span><span>${esc(n.text)}</span></div>`).join("")}</div>`;
+}
+function addNote(id, text) {
+  text = (text||"").trim(); if (!text) return;
+  (state.notes[id] = state.notes[id] || []).push({ t: nowTime(), text });
+  const el = $("notes-"+id); if (el) el.innerHTML = notesHTML(id);
+}
+function toggleDictation(id) {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert("Voice dictation isn't supported in this browser — type notes instead (they still build the report)."); return; }
+  if (recogFor === id) { stopDictation(); renderResults(); return; }
+  stopDictation();
+  recog = new SR(); recog.continuous = true; recog.interimResults = false; recog.lang = "en-US";
+  recog.onresult = (ev) => { for (let i=ev.resultIndex;i<ev.results.length;i++){ if(ev.results[i].isFinal) addNote(id, ev.results[i][0].transcript.trim()); } };
+  recog.onerror = () => { stopDictation(); renderResults(); };
+  recog.onend = () => { if (recogFor === id) { recogFor = null; } };
+  recogFor = id;
+  try { recog.start(); } catch(e){}
+  renderResults();
+}
+function stopDictation() { if (recog) { try { recog.stop(); } catch(e){} } recog=null; recogFor=null; }
+
+function markTreated(id, cat) {
+  if (state.treated[id]) return;
+  state.treated[id] = true;
+  state.workload.cases += 1;
+  if (cat === "RED") state.workload.reds += 1;
+  addNote(id, "Casualty marked treated.");
+  renderResults();
+  if (cat === "RED") setTimeout(()=>guardianNudge(true), 200);
+}
+async function generateReport(id) {
+  const c = state.scan.casualties.find(x=>x.id===id); if(!c) return;
+  const b = state.nfc[id]; const notes = state.notes[id] || [];
+  const L = [];
+  L.push("MEDSENTINEL AI — CASUALTY REPORT");
+  L.push("=================================");
+  L.push(`Casualty: ${c.id}   Triage: ${c.category} (${c.label})   Priority: ${c.priority}`);
+  L.push(`Generated: ${new Date().toISOString()}   Medic: ${state.name||"-"}`);
+  L.push("");
+  L.push("ASSESSMENT");
+  L.push(`  ${c.rationale}`);
+  if (c.note) L.push(`  Observation: "${c.note}"`);
+  if (c.signs && c.signs.length) L.push(`  Signs: ${c.signs.join("; ")}`);
+  if (c.regions && c.regions.length) L.push(`  Injury regions: ${c.regions.join(", ")}`);
+  L.push("");
+  if (b) {
+    L.push("NFC IDENTITY (Dr. Sentinel)");
+    L.push(`  ${b.name} (${b.id}) · blood ${b.blood_type}`);
+    L.push(`  ${b.summary}`);
+    b.risks.forEach(r => L.push(`  - ${r.text}`));
+    if (b.emergency_contact) L.push(`  Emergency contact: ${b.emergency_contact.name} · ${b.emergency_contact.phone}`);
+    L.push("");
+  }
+  L.push("CLINICAL PROMPT");
+  L.push(`  ${c.clinical_tip}`);
+  L.push("");
+  L.push("TREATMENT LOG");
+  if (notes.length) notes.forEach(n => L.push(`  [${n.t}] ${n.text}`));
+  else L.push("  (no entries)");
+  L.push("");
+  L.push("-- Decision-support output. A qualified human medic is responsible for all care. --");
+  const blob = new Blob([L.join("\n")], { type: "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = `report_${c.id}.txt`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* Guardian */
+function stressLevel() {
+  const mins = (Date.now() - state.workload.start) / 60000;
+  const score = state.workload.cases*8 + state.workload.reds*14 + mins*1.5;
+  if (score < 20) return { key:"steady", label:"Steady", score };
+  if (score < 45) return { key:"moderate", label:"Moderate", score };
+  if (score < 75) return { key:"elevated", label:"Elevated", score };
+  return { key:"high", label:"High", score };
+}
+function guardianPanel() {
+  const s = stressLevel();
+  const elevated = s.key === "elevated" || s.key === "high";
+  const msg = elevated
+    ? "You've been working critical cases. A short reset will keep your hands steady."
+    : `Tracking your workload: ${state.workload.cases} treated (${state.workload.reds} immediate). You're good.`;
+  return `<div class="guardian"><span class="g-ico">🛡️</span>
+    <div><div>Guardian · stress <span class="stress ${s.key}">${s.label}</span></div>
+      <div class="g-msg" id="g-msg">${msg}</div></div>
+    <div class="g-actions">
+      <button class="btn-sm" onclick="breathe()">🫁 Breathing exercise</button>
+      <button class="btn-sm" onclick="toggleTone()">🎵 <span id="toneLbl">Calming tone</span></button>
+      ${elevated?`<button class="btn-sm" onclick="guardianNudge(false)">💬 Message</button>`:""}
+    </div></div>`;
+}
+function guardianNudge(afterRed) {
+  const el = $("g-msg"); if (!el) return;
+  el.textContent = MOTIVATION[Math.floor(Math.random()*MOTIVATION.length)];
+}
+function breathe() {
+  let phase = 0; const phases = ["Breathe in…","Hold…","Breathe out…","Hold…"];
+  $("modal").innerHTML = `<div class="overlay" onclick="closeModal()">
+    <div class="breathe"></div><div class="breathe-txt" id="bt">Breathe in…</div>
+    <div style="color:var(--muted);font-size:13px">Box breathing · tap anywhere to close</div></div>`;
+  clearInterval(window._bi);
+  window._bi = setInterval(()=>{ phase=(phase+1)%4; const t=$("bt"); if(t)t.textContent=phases[phase]; }, 2000);
+}
+function closeModal(){ clearInterval(window._bi); $("modal").innerHTML=""; }
+
+let audioCtx=null, toneNodes=null;
+function toggleTone() {
+  const lbl = $("toneLbl");
+  if (toneNodes) { toneNodes.forEach(n=>{try{n.stop&&n.stop();n.disconnect&&n.disconnect();}catch(e){}}); toneNodes=null; if(lbl)lbl.textContent="Calming tone"; return; }
+  try {
+    audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
+    const gain = audioCtx.createGain(); gain.gain.value = 0; gain.connect(audioCtx.destination);
+    const filt = audioCtx.createBiquadFilter(); filt.type="lowpass"; filt.frequency.value=700; filt.connect(gain);
+    const freqs = [174.6, 220.0]; // soft low interval
+    const oscs = freqs.map(f=>{ const o=audioCtx.createOscillator(); o.type="sine"; o.frequency.value=f; o.connect(filt); o.start(); return o; });
+    gain.gain.linearRampToValueAtTime(0.05, audioCtx.currentTime + 1.5);
+    toneNodes = [...oscs, gain]; if(lbl)lbl.textContent="Stop tone";
+  } catch(e){ alert("Audio not available in this browser."); }
+}
+
+/* ---------------- shared ---------------- */
 function chip(k,label,n){ return `<div class="chip ${k}"><span class="n">${n}</span> ${label}</div>`; }
 function signList(signs){ return signs && signs.length
   ? `<div class="signs">${signs.map(s=>`<span>${esc(s)}</span>`).join("")}</div>` : ""; }
 function allocation(a){
   const front = a.assignments.filter(x=>x.line==="front");
   const back = a.assignments.filter(x=>x.line==="back");
-  const frontHTML = front.map(assignRow).join("")
-    + a.front_line_queue.map(q=>queueRow(q,"⏳ queued — no free medic")).join("");
-  const backHTML = back.map(assignRow).join("")
-    + a.back_line_queue.map(q=>queueRow(q,"⏳ delayed queue")).join("")
-    + a.collection_point.map(q=>queueRow(q,"🚶 collection point")).join("")
-    + a.expectant.map(q=>queueRow(q,"⚫ expectant — documented")).join("");
+  const frontHTML = front.map(assignRow).join("") + a.front_line_queue.map(q=>queueRow(q,"⏳ queued — no free medic")).join("");
+  const backHTML = back.map(assignRow).join("") + a.back_line_queue.map(q=>queueRow(q,"⏳ delayed queue")).join("")
+    + a.collection_point.map(q=>queueRow(q,"🚶 collection point")).join("") + a.expectant.map(q=>queueRow(q,"⚫ expectant — documented")).join("");
   return `<div class="line-col">
     <div><div class="line-hd front-hd">🔴 Front line — immediate stabilisation</div>
       ${frontHTML || `<div class="assign"><span class="to">No immediate casualties.</span></div>`}</div>
     <div><div class="line-hd back-hd">🟡 Back line — delayed care &amp; evacuation</div>
-      ${backHTML || `<div class="assign"><span class="to">No back-line casualties.</span></div>`}</div>
-  </div>`;
+      ${backHTML || `<div class="assign"><span class="to">No back-line casualties.</span></div>`}</div></div>`;
 }
 const assignRow = (x)=>`<div class="assign"><span class="medic">${esc(x.medic)}</span>
   <span class="to">→ ${x.casualty_id} (${x.category}) · ${esc(x.task)}</span></div>`;
@@ -391,12 +616,10 @@ const queueRow = (q,tag)=>`<div class="assign"><span class="medic">${q.casualty_
   <span class="to">${tag}</span></div>`;
 
 function drawScene(){
-  const scene = $("scene"); if(!scene) return;
-  const d = state.scan;
+  const scene = $("scene"); if(!scene) return; const d = state.scan;
   if (lastHadImage && lastImageURL) {
     scene.innerHTML = `<img id="sceneImg" src="${lastImageURL}"/>`;
-    const ov = ()=> placeDots(scene, d.casualties);
-    const img = $("sceneImg");
+    const img = $("sceneImg"); const ov=()=>placeDots(scene,d.casualties);
     img.complete ? ov() : img.addEventListener("load", ov);
   } else {
     scene.style.aspectRatio = "16/9";
@@ -405,23 +628,16 @@ function drawScene(){
   }
 }
 function placeDots(scene, casualties){
-  casualties.forEach(c=>{
-    if (c.x==null || c.y==null) return;
-    const dot = document.createElement("div");
-    dot.className = "dot " + c.category;
-    dot.style.left = (c.x*100)+"%"; dot.style.top = (c.y*100)+"%";
-    dot.textContent = c.id; dot.title = c.id + " · " + c.category;
-    scene.appendChild(dot);
-  });
+  casualties.forEach(c=>{ if (c.x==null||c.y==null) return;
+    const dot=document.createElement("div"); dot.className="dot "+c.category;
+    dot.style.left=(c.x*100)+"%"; dot.style.top=(c.y*100)+"%"; dot.textContent=c.id;
+    dot.title=c.id+" · "+c.category; scene.appendChild(dot); });
 }
 
-/* ---------------- body map ---------------- */
-function catColor(cat){ return {RED:"#f2495c",YELLOW:"#e3b341",GREEN:"#3fb950",BLACK:"#6e7681"}[cat] || "#6e7681"; }
+function catColor(cat){ return {RED:"#f2495c",YELLOW:"#e3b341",GREEN:"#3fb950",BLACK:"#6e7681"}[cat]||"#6e7681"; }
 function bodyMap(regions, color){
-  regions = regions || [];
-  const base = "#2b3644", stroke = "#3a4757";
-  const fill = (id)=> regions.includes(id) ? color : base;
-  // viewBox 0 0 100 210, anatomical front view (patient's left = viewer right)
+  regions = regions || []; const base="#2b3644", stroke="#3a4757";
+  const fill=(id)=> regions.includes(id) ? color : base;
   return `<svg viewBox="0 0 100 210" width="96" height="180" aria-label="body map">
     <circle cx="50" cy="20" r="14" fill="${fill('head')}" stroke="${stroke}"/>
     <rect x="44" y="33" width="12" height="8" rx="3" fill="${fill('neck')}" stroke="${stroke}"/>
@@ -430,8 +646,7 @@ function bodyMap(regions, color){
     <rect x="20" y="44" width="11" height="52" rx="6" fill="${fill('right_arm')}" stroke="${stroke}"/>
     <rect x="69" y="44" width="11" height="52" rx="6" fill="${fill('left_arm')}" stroke="${stroke}"/>
     <rect x="35" y="100" width="13" height="70" rx="6" fill="${fill('right_leg')}" stroke="${stroke}"/>
-    <rect x="52" y="100" width="13" height="70" rx="6" fill="${fill('left_leg')}" stroke="${stroke}"/>
-  </svg>`;
+    <rect x="52" y="100" width="13" height="70" rx="6" fill="${fill('left_leg')}" stroke="${stroke}"/></svg>`;
 }
 
 /* ---------------- soldier ---------------- */
@@ -443,22 +658,22 @@ async function renderSoldier(){
     state.soldierId = state.soldiers[0].id;
   }
   const s = state.soldiers.find(x=>x.id===state.soldierId) || state.soldiers[0];
+  const ec = s.emergency_contact;
   v.innerHTML = `
     <div class="selectrow">${state.soldiers.map(x=>
       `<button class="${x.id===s.id?'active':''}" onclick="pickSoldier('${x.id}')">${esc(x.name)}</button>`).join("")}</div>
     <div class="idcard">
-      <div class="hd">
-        <div><div class="nm">${esc(s.name)}</div><div class="rk">${esc(s.rank)} · ${esc(s.unit)} · ID ${esc(s.id)}</div></div>
-        <div style="text-align:center"><div class="blood">${esc(s.blood_type)}</div><div class="rk">blood</div></div>
-      </div>
+      <div class="hd"><div><div class="nm">${esc(s.name)}</div>
+        <div class="rk">${esc(s.rank)} · ${esc(s.unit)} · ID ${esc(s.id)}</div></div>
+        <div style="text-align:center"><div class="blood">${esc(s.blood_type)}</div><div class="rk">blood</div></div></div>
       <div class="idrows">
         ${idrow("Allergies", s.allergies.join(", "), s.allergies.some(a=>a!=='None'&&a!=='None known'))}
         ${idrow("Medications", s.medications.join(", "))}
         ${idrow("Conditions", s.conditions.join(", "))}
+        ${idrow("Emergency contact", ec?`${ec.name} · ${ec.phone}`:"—")}
         ${idrow("Field note", s.notes)}
         ${idrow("Record updated", s.last_updated)}
-      </div>
-    </div>
+      </div></div>
     <p style="text-align:center;color:var(--muted);font-size:13px;margin-top:16px">
       🪖 This is what a medic's <b>Dr. Sentinel</b> unlocks the instant your NFC tag is scanned.</p>`;
 }
@@ -466,7 +681,11 @@ function pickSoldier(id){ state.soldierId = id; renderSoldier(); }
 function idrow(k,v,alert){ return `<div class="idrow"><span class="k">${k}</span>
   <span class="v ${alert?'alrt':''}">${alert?'⚠️ ':''}${esc(v)}</span></div>`; }
 
+function nowTime(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+
+/* preload soldiers so the medic NFC buttons are ready */
+(async()=>{ try { state.soldiers = (await (await fetch(API+"/api/soldiers")).json()).soldiers; } catch(e){} })();
 </script>
 </body>
 </html>

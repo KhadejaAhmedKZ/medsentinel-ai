@@ -16,4 +16,6 @@ class ScanResponse(BaseModel):
     casualties: list[dict]
     allocation: dict
     overseer: str
+    readiness: dict
+    evacuation: dict
     agents: list[dict]

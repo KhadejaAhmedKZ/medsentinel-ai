@@ -17,6 +17,7 @@ SOLDIERS = [
         "conditions": ["Mild asthma"],
         "last_updated": "2026-05-12",
         "notes": "Carries a personal tourniquet, left cargo pocket.",
+        "emergency_contact": {"name": "F. Rahman (spouse)", "phone": "+000 111 2233"},
     },
     {
         "id": "SD-3820",
@@ -29,6 +30,7 @@ SOLDIERS = [
         "conditions": ["Hypertension"],
         "last_updated": "2026-06-30",
         "notes": "Prior right-knee reconstruction (2024).",
+        "emergency_contact": {"name": "K. Osei (brother)", "phone": "+000 444 5566"},
     },
     {
         "id": "SD-9155",
@@ -41,6 +43,7 @@ SOLDIERS = [
         "conditions": ["None"],
         "last_updated": "2026-07-19",
         "notes": "No significant medical history.",
+        "emergency_contact": {"name": "S. Haddad (mother)", "phone": "+000 777 8899"},
     },
 ]
 
