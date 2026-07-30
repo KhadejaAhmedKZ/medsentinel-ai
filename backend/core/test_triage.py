@@ -95,6 +95,33 @@ def test_readiness_flags_shortfall():
     assert r["status"] == "critical"
 
 
+def test_evac_marks_first_red_priority():
+    ranked = triage_all([
+        Casualty(id="R1", can_walk=False, breathing="rapid", responsive=True),
+        Casualty(id="R2", can_walk=False, breathing="rapid", responsive=True),
+    ])
+    e = logistics.plan_evacuation(ranked)
+    assert e["urgent"] == 2 and e["litters_required"] == 2
+    assert "Priority" in e["lines"][0]["status"]
+
+
+def test_clinical_brief_flags_allergy():
+    from backend.core.clinical import soldier_brief
+    b = soldier_brief({"name": "Test", "blood_type": "O+",
+                       "allergies": ["Penicillin"], "medications": ["None"],
+                       "conditions": ["None"]})
+    assert b["risks"] and b["risks"][0]["level"] == "critical"
+    assert "penicillin" in b["risks"][0]["text"].lower()
+
+
+def test_anatomy_word_boundary_no_false_head():
+    from backend.core.anatomy import derive_regions
+    # "near" contains "ear", "forearm" contains "ear" — must NOT map to head.
+    regions = derive_regions(["deformed left forearm"], "lying near the doorway")
+    assert "head" not in regions
+    assert "left_arm" in regions
+
+
 if __name__ == "__main__":
     import sys
     fns = [v for k, v in list(globals().items()) if k.startswith("test_")]

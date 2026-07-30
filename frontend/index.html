@@ -298,7 +298,48 @@ const MOTIVATION = [
   "Every casualty you stabilised is someone going home. Well done.",
 ];
 
+/* ---- session persistence (survives reload) ---- */
+const SAVE_KEY = "medsentinel_session";
+function saveState() {
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      scan: state.scan, notes: state.notes, nfc: state.nfc,
+      treated: state.treated, audit: state.audit, workload: state.workload,
+    }));
+  } catch (e) {}
+}
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SAVE_KEY) || "null");
+    if (!s) return;
+    Object.assign(state, {
+      scan: s.scan || null, notes: s.notes || {}, nfc: s.nfc || {},
+      treated: s.treated || {}, audit: s.audit || [],
+      workload: s.workload || { start: Date.now(), cases: 0, reds: 0 },
+    });
+  } catch (e) {}
+}
+function resetMission() {
+  if (!confirm("Start a new mission? This clears the current scan, treatment logs and after-action data.")) return;
+  stopDictation(); stopCamera();
+  Object.assign(state, { scan: null, notes: {}, nfc: {}, treated: {}, audit: [],
+    workload: { start: Date.now(), cases: 0, reds: 0 } });
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+  renderView();
+}
+function exportMission() {
+  const blob = new Blob([JSON.stringify({
+    exported: new Date().toISOString(), medic: state.name,
+    scan: state.scan, treated: state.treated, notes: state.notes,
+    nfc: state.nfc, audit: state.audit, workload: state.workload,
+  }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "mission.json";
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
 async function boot() {
+  loadState();
   try { state.aiOnline = (await (await fetch(API+"/api/agents")).json()).ai_online; }
   catch (e) { state.aiOnline = false; }
 }
@@ -336,6 +377,7 @@ function scanControls() {
     <div class="field"><label>Back-line medics</label>
       <input type="number" id="back" value="1" min="0" max="50" /></div>
     <button class="btn" id="scanBtn" onclick="doScan()">Scan scene</button>
+    ${state.scan?`<button class="btn-sm" onclick="resetMission()" style="align-self:flex-end">↺ New mission</button>`:""}
   </div>
   <div id="camWrap" style="display:none;margin-top:12px" class="card">
     <h2>🧭 Live camera — Scout / Triage feed</h2>
@@ -391,6 +433,7 @@ async function runScan(imageBlob) {
     const r = await fetch(API+"/api/scan", { method: "POST", body: fd });
     if (!r.ok) throw new Error(await r.text());
     state.scan = await r.json();
+    saveState();
     renderResults();
   } catch (e) { alert("Scan failed: " + e.message); }
   finally { if (btn){ btn.disabled = false; btn.textContent = "Scan scene"; } }
@@ -453,6 +496,7 @@ function aarHTML() {
     <div><b>NFC identifications:</b> ${s.nfcScans} · <b>Elapsed:</b> ${s.mins} min · <b>Readiness:</b> <span class="st-${d.readiness.status}">${d.readiness.status.toUpperCase()}</span> · <b>Urgent evac:</b> ${d.evacuation.urgent}.</div>
     <div style="margin-top:8px"><b>Recommendations:</b><ul style="margin:6px 0 0 18px;padding:0">${s.recs.map(r=>`<li>${esc(r)}</li>`).join("")}</ul></div>
     <div class="actionrow"><button class="btn-sm" onclick="downloadAAR()">📄 Download after-action report</button>
+      <button class="btn-sm" onclick="exportMission()">⬇ Export mission (JSON)</button>
       <button class="btn-sm" onclick="document.getElementById('aar').innerHTML=aarHTML()">↻ Refresh</button></div></div>`;
 }
 function downloadAAR() {
@@ -558,6 +602,7 @@ async function nfcScan(casualtyId, soldierId) {
     state.nfc[casualtyId] = b;
     state.audit.push({ t: nowTime(), type: "nfc",
       detail: `NFC tag ${b.id} (${b.name}) read for casualty ${casualtyId} by ${state.name||"medic"}.` });
+    saveState();
     renderResults();
   } catch (e) { alert("NFC read failed: " + e.message); }
 }
@@ -586,6 +631,7 @@ function addNote(id, text) {
   text = (text||"").trim(); if (!text) return;
   (state.notes[id] = state.notes[id] || []).push({ t: nowTime(), text });
   const el = $("notes-"+id); if (el) el.innerHTML = notesHTML(id);
+  saveState();
 }
 function toggleDictation(id) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -608,6 +654,7 @@ function markTreated(id, cat) {
   state.workload.cases += 1;
   if (cat === "RED") state.workload.reds += 1;
   addNote(id, "Casualty marked treated.");
+  saveState();
   renderResults();
   if (cat === "RED") setTimeout(()=>guardianNudge(true), 200);
 }
