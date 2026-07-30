@@ -253,7 +253,7 @@
       <p>Your medical record — the profile a medic unlocks when they scan your NFC tag.</p>
     </button>
   </div>
-  <div class="team">Digital team: 🎯 Triage · 🩺 Dr. Sentinel · ✍️ Scribe · 🛡️ Guardian · 🛰️ Overseer · 📦 Logistician</div>
+  <div class="team">Digital team: 🧭 Scout · 🎯 Triage · 🩺 Dr. Sentinel · ✍️ Scribe · 🛡️ Guardian · 🛰️ Overseer · 📦 Logistician · 🏛️ Architect</div>
   <div class="namebox"><input id="nameInput" placeholder="Your name (optional)" /></div>
   <div class="disclaimer">
     Simulation / training decision-support prototype for START mass-casualty triage.
@@ -285,7 +285,7 @@ const $ = (id) => document.getElementById(id);
 const API = "";
 const state = { role: null, name: "", scan: null, aiOnline: false,
   soldiers: [], soldierId: null,
-  notes: {}, nfc: {}, treated: {},
+  notes: {}, nfc: {}, treated: {}, audit: [],
   workload: { start: Date.now(), cases: 0, reds: 0 } };
 let lastImageURL = null, lastHadImage = false;
 let recog = null, recogFor = null;
@@ -315,7 +315,7 @@ function login(role) {
   b.className = "badge " + (state.aiOnline ? "on" : "off");
   renderView();
 }
-function logout() { stopDictation(); state.role = null;
+function logout() { stopDictation(); stopCamera(); state.role = null;
   $("app").style.display = "none"; $("login").style.display = "flex"; }
 
 function renderView() {
@@ -329,27 +329,71 @@ function scanControls() {
   return `<div class="controls">
     <div class="field"><label>Scene photo (optional — blank uses the sample scene)</label>
       <input type="file" id="file" accept="image/*" /></div>
+    <div class="field"><label>Live camera</label>
+      <button class="btn-sm" id="camBtn" onclick="startCamera()">📷 Use camera</button></div>
     <div class="field"><label>Front-line medics</label>
       <input type="number" id="front" value="2" min="0" max="50" /></div>
     <div class="field"><label>Back-line medics</label>
       <input type="number" id="back" value="1" min="0" max="50" /></div>
     <button class="btn" id="scanBtn" onclick="doScan()">Scan scene</button>
-  </div>`;
+  </div>
+  <div id="camWrap" style="display:none;margin-top:12px" class="card">
+    <h2>🧭 Live camera — Scout / Triage feed</h2>
+    <video id="cam" autoplay playsinline muted style="width:100%;max-height:340px;border-radius:10px;background:#000"></video>
+    <div class="actionrow">
+      <button class="btn" onclick="captureAndScan()">📸 Capture &amp; scan</button>
+      <button class="btn-sm" onclick="stopCamera()">Stop camera</button>
+    </div>
+  </div>
+  <canvas id="camCanvas" style="display:none"></canvas>`;
+}
+
+let camStream = null;
+async function startCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    alert("Live camera isn't available in this browser. Upload a photo instead."); return;
+  }
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
+    $("cam").srcObject = camStream; $("camWrap").style.display = "block";
+    $("camBtn").textContent = "📷 Camera on";
+  } catch (e) { alert("Could not open the camera: " + e.message); }
+}
+function stopCamera() {
+  if (camStream) camStream.getTracks().forEach(t => t.stop());
+  camStream = null;
+  const w = $("camWrap"); if (w) w.style.display = "none";
+  const b = $("camBtn"); if (b) b.textContent = "📷 Use camera";
+}
+async function captureAndScan() {
+  const v = $("cam"), cv = $("camCanvas");
+  if (!v || !v.videoWidth) { alert("Camera not ready yet."); return; }
+  cv.width = v.videoWidth; cv.height = v.videoHeight;
+  cv.getContext("2d").drawImage(v, 0, 0);
+  const blob = await new Promise(res => cv.toBlob(res, "image/jpeg", 0.9));
+  lastImageURL = cv.toDataURL("image/jpeg", 0.9); lastHadImage = true;
+  stopCamera();
+  await runScan(blob);
 }
 async function doScan() {
-  const btn = $("scanBtn"); btn.disabled = true; btn.textContent = "Scanning…";
+  const f = $("file").files[0];
+  if (f) { lastHadImage = true; lastImageURL = URL.createObjectURL(f); }
+  else { lastHadImage = false; }
+  await runScan(f || null);
+}
+async function runScan(imageBlob) {
+  const btn = $("scanBtn"); if (btn){ btn.disabled = true; btn.textContent = "Scanning…"; }
   const fd = new FormData();
-  const f = $("file").files[0]; lastHadImage = !!f;
-  if (f) { fd.append("image", f); lastImageURL = URL.createObjectURL(f); }
-  fd.append("front_medics", $("front").value || 0);
-  fd.append("back_medics", $("back").value || 0);
+  if (imageBlob) fd.append("image", imageBlob, "scene.jpg");
+  fd.append("front_medics", ($("front") ? $("front").value : 2) || 0);
+  fd.append("back_medics", ($("back") ? $("back").value : 1) || 0);
   try {
     const r = await fetch(API+"/api/scan", { method: "POST", body: fd });
     if (!r.ok) throw new Error(await r.text());
     state.scan = await r.json();
     renderResults();
   } catch (e) { alert("Scan failed: " + e.message); }
-  finally { btn.disabled = false; btn.textContent = "Scan scene"; }
+  finally { if (btn){ btn.disabled = false; btn.textContent = "Scan scene"; } }
 }
 function renderResults() {
   $("results").innerHTML = state.role === "medic" ? medicResults() : commanderResults();
@@ -359,8 +403,13 @@ function renderResults() {
 /* ---------------- commander ---------------- */
 function commanderResults() {
   const d = state.scan, c = d.summary.counts;
+  const sc = d.scout || {};
   return `
     <div class="overseer"><b>🛰️ Overseer:</b> ${esc(d.overseer)}</div>
+    ${sc.approach?`<div class="overseer" style="background:linear-gradient(180deg,rgba(224,134,75,.10),rgba(224,134,75,.03));border-color:rgba(224,134,75,.3)">
+      <b style="color:var(--orange)">🧭 Scout:</b> ${esc(sc.approach)}
+      ${sc.hazards&&sc.hazards.length?`<div style="margin-top:6px;font-size:13px">⚠️ Hazards: ${sc.hazards.map(h=>`<span class="signs"><span>${esc(h)}</span></span>`).join(" ")}</div>`:""}
+      <div style="margin-top:4px;font-size:12px;color:var(--muted)">Sectors — left ${sc.sectors.left} · centre ${sc.sectors.centre} · right ${sc.sectors.right}</div></div>`:""}
     <div class="chips">${chip("RED","Immediate",c.RED)}${chip("YELLOW","Delayed",c.YELLOW)}${chip("GREEN","Minor",c.GREEN)}${chip("BLACK","Expectant",c.BLACK)}</div>
     <div class="grid2">
       <div class="card"><h2>Scene · triage overlay</h2><div class="scene" id="scene"></div>
@@ -375,7 +424,58 @@ function commanderResults() {
     <div class="grid2" style="margin-top:20px">
       <div class="card"><h2>📦 Evacuation status</h2>${evacuation(d.evacuation)}</div>
       <div class="card"><h2>📦 Medical readiness — <span class="st-${d.readiness.status}">${d.readiness.status.toUpperCase()}</span></h2>${readiness(d.readiness)}</div>
-    </div>`;
+    </div>
+    <div class="card" style="margin-top:20px"><h2>🏛️ Architect — after-action review</h2>
+      <div id="aar">${aarHTML()}</div></div>`;
+}
+
+/* Architect — compiles a mission after-action review from session state. */
+function aarStats() {
+  const d = state.scan; const c = d.summary.counts;
+  const treatedIds = Object.keys(state.treated).filter(k => state.treated[k]);
+  const documented = Object.keys(state.notes).filter(k => (state.notes[k]||[]).length);
+  const logEntries = Object.values(state.notes).reduce((a, arr) => a + arr.length, 0);
+  const mins = Math.max(0, Math.round((Date.now() - state.workload.start) / 60000));
+  const recs = [];
+  if (d.allocation.unassigned_red > 0) recs.push(`Request reinforcement — ${d.allocation.unassigned_red} immediate casualty(ies) went unassigned.`);
+  if (d.readiness.status !== "ok") recs.push(`Resupply: readiness was ${d.readiness.status.toUpperCase()} — ` +
+    d.readiness.items.filter(i=>i.status!=="ok").map(i=>i.item).join(", ") + ".");
+  if (documented.length < d.summary.total) recs.push(`Improve documentation — ${d.summary.total - documented.length} casualty(ies) had no treatment log.`);
+  if (!recs.length) recs.push("No gaps flagged — response met the plan.");
+  return { c, treated: treatedIds.length, documented: documented.length, logEntries, mins,
+           nfcScans: state.audit.filter(a=>a.type==="nfc").length, recs };
+}
+function aarHTML() {
+  const s = aarStats(); const d = state.scan;
+  return `<div style="font-size:13.5px;line-height:1.7">
+    <div><b>Casualties:</b> ${d.summary.total} — ${s.c.RED} immediate, ${s.c.YELLOW} delayed, ${s.c.GREEN} minor, ${s.c.BLACK} expectant.</div>
+    <div><b>Treated &amp; documented:</b> ${s.treated} treated · ${s.documented}/${d.summary.total} with a treatment log · ${s.logEntries} log entries.</div>
+    <div><b>NFC identifications:</b> ${s.nfcScans} · <b>Elapsed:</b> ${s.mins} min · <b>Readiness:</b> <span class="st-${d.readiness.status}">${d.readiness.status.toUpperCase()}</span> · <b>Urgent evac:</b> ${d.evacuation.urgent}.</div>
+    <div style="margin-top:8px"><b>Recommendations:</b><ul style="margin:6px 0 0 18px;padding:0">${s.recs.map(r=>`<li>${esc(r)}</li>`).join("")}</ul></div>
+    <div class="actionrow"><button class="btn-sm" onclick="downloadAAR()">📄 Download after-action report</button>
+      <button class="btn-sm" onclick="document.getElementById('aar').innerHTML=aarHTML()">↻ Refresh</button></div></div>`;
+}
+function downloadAAR() {
+  const s = aarStats(); const d = state.scan; const L = [];
+  L.push("MEDSENTINEL AI — AFTER-ACTION REVIEW (Architect)");
+  L.push("=================================================");
+  L.push(`Generated: ${new Date().toISOString()}   Commander: ${state.name||"-"}`);
+  L.push("");
+  L.push(`Casualties: ${d.summary.total} (RED ${s.c.RED} / YELLOW ${s.c.YELLOW} / GREEN ${s.c.GREEN} / BLACK ${s.c.BLACK})`);
+  L.push(`Treated: ${s.treated}   Documented: ${s.documented}/${d.summary.total}   Log entries: ${s.logEntries}`);
+  L.push(`NFC identifications: ${s.nfcScans}   Elapsed: ${s.mins} min`);
+  L.push(`Readiness: ${d.readiness.status.toUpperCase()}   Urgent evac: ${d.evacuation.urgent}   Litters required: ${d.evacuation.litters_required}`);
+  L.push(`Scout: ${d.scout && d.scout.approach ? d.scout.approach : "-"}`);
+  L.push("");
+  L.push("RECOMMENDATIONS");
+  s.recs.forEach(r => L.push(`  - ${r}`));
+  L.push("");
+  if (state.audit.length) { L.push("AUDIT TRAIL"); state.audit.forEach(a => L.push(`  [${a.t}] ${a.detail}`)); L.push(""); }
+  L.push("-- Decision-support output. A qualified human medic is responsible for all care. --");
+  const blob = new Blob([L.join("\n")], { type: "text/plain" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "after_action_review.txt";
+  document.body.appendChild(a); a.click(); a.remove();
 }
 function casRow(c) {
   return `<div class="cas ${c.category}">
@@ -406,8 +506,12 @@ function readiness(r) {
 function medicResults() {
   const d = state.scan, c = d.summary.counts;
   const mine = d.allocation.assignments.filter(a => a.line === "front");
+  const sc = d.scout || {};
   return `
     ${guardianPanel()}
+    ${sc.approach?`<div class="overseer" style="background:linear-gradient(180deg,rgba(224,134,75,.10),rgba(224,134,75,.03));border-color:rgba(224,134,75,.3)">
+      <b style="color:var(--orange)">🧭 Scout:</b> ${esc(sc.approach)}
+      ${sc.hazards&&sc.hazards.length?` · <b>Hazards:</b> ${sc.hazards.map(esc).join("; ")}`:""}</div>`:""}
     <div class="overseer"><b>🎯 Your front line:</b> ${mine.length
       ? mine.map(a=>`<b>${esc(a.medic)}</b> → ${a.casualty_id}`).join(", ")
       : "No immediate casualties assigned."}</div>
@@ -451,7 +555,10 @@ function nfcPanel(c) {
 async function nfcScan(casualtyId, soldierId) {
   try {
     const b = await (await fetch(API+`/api/soldiers/${soldierId}/brief`)).json();
-    state.nfc[casualtyId] = b; renderResults();
+    state.nfc[casualtyId] = b;
+    state.audit.push({ t: nowTime(), type: "nfc",
+      detail: `NFC tag ${b.id} (${b.name}) read for casualty ${casualtyId} by ${state.name||"medic"}.` });
+    renderResults();
   } catch (e) { alert("NFC read failed: " + e.message); }
 }
 
@@ -539,6 +646,7 @@ async function generateReport(id) {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = `report_${c.id}.txt`;
   document.body.appendChild(a); a.click(); a.remove();
+  state.audit.push({ t: nowTime(), type: "report", detail: `Casualty report generated for ${c.id}.` });
 }
 
 /* Guardian */
