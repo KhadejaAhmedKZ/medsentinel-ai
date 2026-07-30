@@ -12,6 +12,7 @@ from backend.agents.triage_agent import ALLOWED_MIME_TYPES, MAX_IMAGE_BYTES, tri
 from backend.ai.gemini_client import gemini
 from backend.ai.prompts import OVERSEER
 from backend.core import allocation, triage
+from backend.core.soldiers import BY_ID, SOLDIERS
 from backend.schemas import ScanResponse
 
 router = APIRouter(prefix="/api", tags=["coordinator"])
@@ -38,6 +39,19 @@ async def health() -> dict:
 @router.get("/agents")
 async def agents() -> dict:
     return {"agents": _AGENT_CARDS, "ai_online": gemini.online}
+
+
+@router.get("/soldiers")
+async def soldiers() -> dict:
+    return {"soldiers": SOLDIERS}
+
+
+@router.get("/soldiers/{soldier_id}")
+async def soldier(soldier_id: str) -> dict:
+    s = BY_ID.get(soldier_id)
+    if not s:
+        raise HTTPException(404, "Soldier not found")
+    return s
 
 
 @router.post("/scan", response_model=ScanResponse)

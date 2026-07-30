@@ -22,6 +22,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field, asdict
 from enum import Enum
 
+from backend.core.anatomy import derive_regions
+from backend.core.clinical import clinical_tip
+
 
 class Category(str, Enum):
     RED = "RED"        # Immediate
@@ -59,6 +62,8 @@ class Casualty:
     category: Category | None = None
     priority: int = 0
     rationale: str = ""
+    regions: list[str] = field(default_factory=list)  # body-map regions
+    clinical_tip: str = ""                # Dr. Sentinel MARCH prompt
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -114,6 +119,12 @@ def score(c: Casualty) -> Casualty:
     if critical_sign and c.category == Category.RED:
         bump += 5
     c.priority = min(base + bump, 100)
+
+    # Body-map regions + Dr. Sentinel clinical prompt (deterministic).
+    c.regions = derive_regions(c.signs, c.note)
+    c.clinical_tip = clinical_tip(
+        c.category.value, c.breathing, c.responsive, c.signs, c.regions
+    )
     return c
 
 
