@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MEDSENTINEL AI — Casualty Triage & Team Allocation</title>
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --panel2: #1c232d; --line: #2b3441;
+    --text: #e6edf3; --muted: #8b949e; --accent: #3fb0d6;
+    --red: #f2495c; --yellow: #e3b341; --green: #3fb950; --black: #6e7681;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    line-height: 1.45;
+  }
+  header {
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 14px 22px; background: var(--panel); border-bottom: 1px solid var(--line);
+  }
+  header h1 { font-size: 18px; margin: 0; letter-spacing: 1px; }
+  header h1 span { color: var(--accent); }
+  .tag { font-size: 11px; color: var(--muted); border: 1px solid var(--line);
+         padding: 2px 8px; border-radius: 20px; }
+  .badge { margin-left: auto; font-size: 12px; padding: 4px 10px; border-radius: 20px; }
+  .badge.on { background: rgba(63,185,80,.15); color: var(--green); }
+  .badge.off { background: rgba(110,118,129,.2); color: var(--muted); }
+  .wrap { max-width: 1200px; margin: 0 auto; padding: 22px; }
+  .controls {
+    display: flex; gap: 14px; flex-wrap: wrap; align-items: flex-end;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px;
+  }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; color: var(--muted); }
+  .field input[type=number] {
+    width: 90px; background: var(--panel2); border: 1px solid var(--line);
+    color: var(--text); border-radius: 8px; padding: 8px; font-size: 15px;
+  }
+  input[type=file] { color: var(--muted); font-size: 13px; }
+  button {
+    background: var(--accent); color: #04222c; border: 0; font-weight: 700;
+    padding: 11px 20px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  }
+  button:disabled { opacity: .5; cursor: wait; }
+  .overseer {
+    margin: 20px 0; padding: 14px 18px; background: rgba(63,176,214,.08);
+    border-left: 3px solid var(--accent); border-radius: 8px; font-size: 15px;
+  }
+  .overseer b { color: var(--accent); }
+  .chips { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+  .chip { padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 700;
+          display: flex; gap: 8px; align-items: center; }
+  .chip .n { font-size: 18px; }
+  .chip.RED { background: rgba(242,73,92,.14); color: var(--red); }
+  .chip.YELLOW { background: rgba(227,179,65,.14); color: var(--yellow); }
+  .chip.GREEN { background: rgba(63,185,80,.14); color: var(--green); }
+  .chip.BLACK { background: rgba(110,118,129,.18); color: var(--muted); }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+          padding: 16px; }
+  .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+             color: var(--muted); margin: 0 0 12px; }
+  .scene { position: relative; width: 100%; border-radius: 8px; overflow: hidden;
+           background: var(--panel2); min-height: 200px; }
+  .scene img { width: 100%; display: block; }
+  .dot { position: absolute; width: 26px; height: 26px; border-radius: 50%;
+         transform: translate(-50%, -50%); border: 2px solid #fff;
+         display: flex; align-items: center; justify-content: center;
+         font-size: 11px; font-weight: 800; color: #fff; }
+  .dot.RED { background: var(--red); } .dot.YELLOW { background: var(--yellow); color:#3a2c00; }
+  .dot.GREEN { background: var(--green); } .dot.BLACK { background: var(--black); }
+  .placeholder { padding: 40px 16px; text-align: center; color: var(--muted); font-size: 14px; }
+  .cas { border-left: 4px solid; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px;
+         background: var(--panel2); }
+  .cas.RED { border-color: var(--red); } .cas.YELLOW { border-color: var(--yellow); }
+  .cas.GREEN { border-color: var(--green); } .cas.BLACK { border-color: var(--black); }
+  .cas .top { display: flex; justify-content: space-between; align-items: center; }
+  .cas .id { font-weight: 800; }
+  .cas .cat { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 20px; }
+  .cat.RED { background: var(--red); color:#fff; } .cat.YELLOW { background: var(--yellow); color:#3a2c00; }
+  .cat.GREEN { background: var(--green); color:#04220b; } .cat.BLACK { background: var(--black); color:#fff; }
+  .cas .why { font-size: 13px; color: var(--muted); margin-top: 4px; }
+  .cas .signs { font-size: 12px; margin-top: 4px; }
+  .cas .signs span { background: var(--panel); border: 1px solid var(--line);
+                     padding: 1px 7px; border-radius: 20px; margin-right: 5px; font-size: 11px; }
+  .alloc { margin-top: 20px; }
+  .line-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 860px) { .line-col { grid-template-columns: 1fr; } }
+  .assign { display: flex; justify-content: space-between; gap: 10px; padding: 9px 12px;
+            background: var(--panel2); border-radius: 8px; margin-bottom: 7px; font-size: 13px; }
+  .assign .medic { font-weight: 700; }
+  .assign .to { color: var(--muted); }
+  .front-hd { color: var(--red); } .back-hd { color: var(--yellow); }
+  .foot { color: var(--muted); font-size: 12px; margin-top: 26px; text-align: center;
+          border-top: 1px solid var(--line); padding-top: 16px; }
+  .agents { display: flex; gap: 8px; }
+  .agent { font-size: 11px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>MED<span>SENTINEL</span> AI</h1>
+  <span class="tag">Casualty Triage · Team Allocation</span>
+  <div class="agents" id="agents"></div>
+  <span class="badge off" id="aiBadge">checking…</span>
+</header>
+
+<div class="wrap">
+  <div class="controls">
+    <div class="field">
+      <label>Scene photo (optional — blank uses sample scene)</label>
+      <input type="file" id="file" accept="image/*" />
+    </div>
+    <div class="field">
+      <label>Front-line medics</label>
+      <input type="number" id="front" value="2" min="0" max="50" />
+    </div>
+    <div class="field">
+      <label>Back-line medics</label>
+      <input type="number" id="back" value="1" min="0" max="50" />
+    </div>
+    <button id="scan">Scan scene</button>
+  </div>
+
+  <div id="results" style="display:none">
+    <div class="overseer" id="overseer"></div>
+    <div class="chips" id="chips"></div>
+
+    <div class="grid">
+      <div class="card">
+        <h2>Scene · Triage overlay</h2>
+        <div class="scene" id="scene"><div class="placeholder">No image — sample scene used.</div></div>
+        <p style="font-size:12px;color:var(--muted)" id="sceneNote"></p>
+      </div>
+      <div class="card">
+        <h2>Casualties · most urgent first</h2>
+        <div id="casList"></div>
+      </div>
+    </div>
+
+    <div class="card alloc">
+      <h2>Team allocation</h2>
+      <div class="line-col">
+        <div>
+          <h3 class="front-hd">🔴 Front line — immediate stabilisation</h3>
+          <div id="front-assign"></div>
+        </div>
+        <div>
+          <h3 class="back-hd">🟡 Back line — delayed care & evacuation</h3>
+          <div id="back-assign"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Decision-support prototype for mass-casualty (START) triage. A qualified human
+    medic is responsible for every triage and treatment decision. Simulation /
+    training use only.
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let lastImageURL = null;
+
+async function loadAgents() {
+  try {
+    const r = await fetch("/api/agents");
+    const d = await r.json();
+    $("agents").innerHTML = d.agents.map(a =>
+      `<span class="agent">${a.emoji} ${a.name}</span>`).join("");
+    const b = $("aiBadge");
+    b.textContent = d.ai_online ? "AI online" : "Offline mode";
+    b.className = "badge " + (d.ai_online ? "on" : "off");
+  } catch (e) { $("aiBadge").textContent = "backend offline"; }
+}
+
+$("scan").addEventListener("click", async () => {
+  const btn = $("scan");
+  btn.disabled = true; btn.textContent = "Scanning…";
+  const fd = new FormData();
+  const f = $("file").files[0];
+  if (f) { fd.append("image", f); lastImageURL = URL.createObjectURL(f); }
+  fd.append("front_medics", $("front").value || 0);
+  fd.append("back_medics", $("back").value || 0);
+  try {
+    const r = await fetch("/api/scan", { method: "POST", body: fd });
+    if (!r.ok) throw new Error(await r.text());
+    render(await r.json(), !!f);
+  } catch (e) {
+    alert("Scan failed: " + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = "Scan scene";
+  }
+});
+
+function render(d, hasImage) {
+  $("results").style.display = "block";
+  $("overseer").innerHTML = `<b>🛰️ Overseer:</b> ${d.overseer}`;
+  $("sceneNote").textContent = d.scene_note || "";
+
+  const c = d.summary.counts;
+  $("chips").innerHTML = [
+    ["RED","Immediate"],["YELLOW","Delayed"],["GREEN","Minor"],["BLACK","Expectant"]
+  ].map(([k,label]) =>
+    `<div class="chip ${k}"><span class="n">${c[k]}</span> ${label}</div>`).join("");
+
+  // Scene + dots
+  const scene = $("scene");
+  if (hasImage && lastImageURL) {
+    scene.innerHTML = `<img id="sceneImg" src="${lastImageURL}" />`;
+    const overlay = () => d.casualties.forEach(cx => {
+      if (cx.x == null || cx.y == null) return;
+      const dot = document.createElement("div");
+      dot.className = "dot " + cx.category;
+      dot.style.left = (cx.x*100)+"%"; dot.style.top = (cx.y*100)+"%";
+      dot.textContent = cx.id;
+      scene.appendChild(dot);
+    });
+    $("sceneImg").complete ? overlay() : $("sceneImg").addEventListener("load", overlay);
+  } else {
+    scene.innerHTML = `<div class="placeholder">Sample scene (offline) — casualty map:</div>`;
+    scene.style.aspectRatio = "16/9";
+    d.casualties.forEach(cx => {
+      if (cx.x == null) return;
+      const dot = document.createElement("div");
+      dot.className = "dot " + cx.category;
+      dot.style.left = (cx.x*100)+"%"; dot.style.top = (cx.y*100)+"%";
+      dot.textContent = cx.id;
+      scene.appendChild(dot);
+    });
+  }
+
+  // Casualty list
+  $("casList").innerHTML = d.casualties.map(cx => `
+    <div class="cas ${cx.category}">
+      <div class="top">
+        <span class="id">${cx.id} · priority ${cx.priority}</span>
+        <span class="cat ${cx.category}">${cx.category} · ${cx.label}</span>
+      </div>
+      <div class="why">${cx.rationale}</div>
+      ${cx.note ? `<div class="why">“${cx.note}”</div>` : ""}
+      ${cx.signs && cx.signs.length ? `<div class="signs">${cx.signs.map(s=>`<span>${s}</span>`).join("")}</div>` : ""}
+    </div>`).join("");
+
+  // Allocation
+  const a = d.allocation;
+  const front = a.assignments.filter(x => x.line === "front");
+  const back = a.assignments.filter(x => x.line === "back");
+  $("front-assign").innerHTML =
+    front.map(assignRow).join("") +
+    a.front_line_queue.map(q => queueRow(q, "⏳ queued — no free medic")).join("") ||
+    `<div class="assign"><span class="to">No immediate casualties.</span></div>`;
+  $("back-assign").innerHTML =
+    back.map(assignRow).join("") +
+    a.back_line_queue.map(q => queueRow(q, "⏳ delayed queue")).join("") +
+    a.collection_point.map(q => queueRow(q, "🚶 collection point")).join("") +
+    a.expectant.map(q => queueRow(q, "⚫ expectant — documented")).join("") ||
+    `<div class="assign"><span class="to">No back-line casualties.</span></div>`;
+}
+
+const assignRow = (x) => `
+  <div class="assign">
+    <span class="medic">${x.medic}</span>
+    <span class="to">→ ${x.casualty_id} (${x.category}) · ${x.task}</span>
+  </div>`;
+const queueRow = (q, tag) => `
+  <div class="assign">
+    <span class="medic">${q.casualty_id} <small>(${q.category})</small></span>
+    <span class="to">${tag}</span>
+  </div>`;
+
+loadAgents();
+</script>
+</body>
+</html>
