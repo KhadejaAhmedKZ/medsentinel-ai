@@ -26,17 +26,21 @@ class TriageAgent(Persona):
     emoji = "🎯"
     role = "Scans the scene and detects casualties"
 
-    async def scan(self, image_bytes: bytes, mime_type: str) -> tuple[list[Casualty], str, bool]:
-        """Return (casualties, scene_note, used_ai)."""
+    async def scan(self, image_bytes: bytes, mime_type: str) -> tuple[list[Casualty], str, list[str], bool]:
+        """Return (casualties, scene_note, hazards, used_ai)."""
         if gemini.online and image_bytes:
             data = await gemini.analyze_image_json(
                 image_bytes, mime_type, "Analyze this scene.", system_instruction=TRIAGE_SCAN
             )
             casualties = _parse(data)
             if casualties:
-                return casualties, str(data.get("scene_note", "")), True
+                hazards = [str(h)[:80] for h in data.get("hazards", []) if h][:6]
+                return casualties, str(data.get("scene_note", "")), hazards, True
             logger.info("Triage AI returned no casualties; using sample scene.")
-        return _sample_scene(), "Sample scene (offline mode — no live image analysis).", False
+        from backend.core.scout import SAMPLE_HAZARDS
+        return (_sample_scene(),
+                "Sample scene (offline mode — no live image analysis).",
+                list(SAMPLE_HAZARDS), False)
 
 
 def _parse(data: dict) -> list[Casualty]:

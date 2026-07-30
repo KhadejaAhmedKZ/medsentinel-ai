@@ -3,7 +3,7 @@
 Run:  python -m pytest backend/core/test_triage.py   (or just run this file)
 """
 from backend.core.triage import Casualty, Category, triage_all, summarize
-from backend.core import allocation
+from backend.core import allocation, scout, logistics
 
 
 def test_walking_wounded_is_green():
@@ -73,6 +73,26 @@ def test_expectant_never_assigned():
     plan = allocation.allocate(ranked, front_medics=3, back_medics=3)
     assert plan["assignments"] == []
     assert len(plan["expectant"]) == 1
+
+
+def test_scout_approach_points_at_most_urgent():
+    ranked = triage_all([
+        Casualty(id="R1", x=0.1, can_walk=False, breathing="rapid", responsive=True),
+        Casualty(id="G1", x=0.9, can_walk=True, breathing="normal", responsive=True),
+    ])
+    rep = scout.assess(ranked, ["fire, right side"])
+    assert rep["sectors"] == {"left": 1, "centre": 0, "right": 1}
+    assert "left" in rep["approach"]        # R1 (RED) is on the left
+    assert rep["hazard_count"] == 1
+
+
+def test_readiness_flags_shortfall():
+    reds = [Casualty(id=f"R{i}", can_walk=False, breathing="rapid", responsive=True)
+            for i in range(5)]
+    ranked = triage_all(reds)
+    r = logistics.assess_readiness(ranked, {"blood_packs": 1})
+    assert r["items"][0]["need"] == 5 and r["items"][0]["have"] == 1
+    assert r["status"] == "critical"
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ from backend.agents.base import Persona
 from backend.agents.triage_agent import ALLOWED_MIME_TYPES, MAX_IMAGE_BYTES, triage_agent
 from backend.ai.gemini_client import gemini
 from backend.ai.prompts import OVERSEER
-from backend.core import allocation, logistics, triage
+from backend.core import allocation, logistics, scout, triage
 from backend.core.clinical import soldier_brief
 from backend.core.soldiers import BY_ID, SOLDIERS
 from backend.schemas import ScanResponse
@@ -32,12 +32,14 @@ overseer = Overseer()
 # The full digital team surfaced in the UI (some are deterministic modules
 # rather than LLM agents, but they are all "team members" to the user).
 _AGENT_CARDS = [
+    {"name": "Scout", "emoji": "🧭", "role": "Scene hazards & safe approach"},
     triage_agent.card(),
     {"name": "Dr. Sentinel", "emoji": "🩺", "role": "Clinical decision support"},
     {"name": "Scribe", "emoji": "✍️", "role": "Voice notes into a report"},
     {"name": "Guardian", "emoji": "🛡️", "role": "Medic stress & wellbeing"},
     overseer.card(),
     {"name": "Logistician", "emoji": "📦", "role": "Readiness & evacuation"},
+    {"name": "Architect", "emoji": "🏛️", "role": "After-action review"},
 ]
 
 
@@ -96,14 +98,15 @@ async def scan(
     front_medics = max(0, min(front_medics, 50))
     back_medics = max(0, min(back_medics, 50))
 
-    # 1. Triage agent reads the scene.
-    casualties, scene_note, used_ai = await triage_agent.scan(image_bytes, mime)
+    # 1. Triage agent reads the scene (casualties + hazards).
+    casualties, scene_note, hazards, used_ai = await triage_agent.scan(image_bytes, mime)
 
     # 2. START scoring (deterministic) + sort most-urgent first.
     ranked = triage.triage_all(casualties)
     summary = triage.summarize(ranked)
 
-    # 3. Allocate the team front/back line + Logistician readiness / evac.
+    # 3. Scout assessment, team allocation, Logistician readiness / evac.
+    scout_report = scout.assess(ranked, hazards)
     plan = allocation.allocate(ranked, front_medics, back_medics)
     readiness = logistics.assess_readiness(ranked)
     evacuation = logistics.plan_evacuation(ranked)
@@ -128,6 +131,7 @@ async def scan(
         casualties=[c.to_dict() for c in ranked],
         allocation=plan,
         overseer=overseer_text,
+        scout=scout_report,
         readiness=readiness,
         evacuation=evacuation,
         agents=_AGENT_CARDS,

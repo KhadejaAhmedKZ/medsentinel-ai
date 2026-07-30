@@ -25,7 +25,8 @@ Return a JSON object of this exact shape:
       "note": "one short neutral observation"
     }
   ],
-  "scene_note": "one short line on hazards or layout, if any"
+  "hazards": ["short phrases for environmental dangers, e.g. 'fire, right side', 'structural debris', 'blocked exit'"],
+  "scene_note": "one short line on overall layout or approach, if any"
 }
 
 Rules:
@@ -33,6 +34,8 @@ Rules:
 - Report only what is visible. Use null / "unknown" when you cannot tell —
   do NOT invent vitals.
 - Keep every string short and clinical. No speculation about identity or cause.
+- List environmental hazards (fire, smoke, water, debris, unstable structure,
+  blocked routes) in "hazards"; empty list if none are visible.
 - If you see no people, return an empty casualties list.
 """
 
