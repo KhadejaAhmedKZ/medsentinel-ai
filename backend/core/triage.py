@@ -23,6 +23,7 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 
 from backend.core.anatomy import derive_regions
+from backend.core.attention import region_attention
 from backend.core.clinical import clinical_tip
 
 
@@ -63,6 +64,7 @@ class Casualty:
     priority: int = 0
     rationale: str = ""
     regions: list[str] = field(default_factory=list)  # body-map regions
+    attention: list = field(default_factory=list)     # ranked "treat first" regions
     clinical_tip: str = ""                # Dr. Sentinel MARCH prompt
 
     def to_dict(self) -> dict:
@@ -120,8 +122,9 @@ def score(c: Casualty) -> Casualty:
         bump += 5
     c.priority = min(base + bump, 100)
 
-    # Body-map regions + Dr. Sentinel clinical prompt (deterministic).
+    # Body-map regions + ranked attention + Dr. Sentinel clinical prompt.
     c.regions = derive_regions(c.signs, c.note)
+    c.attention = region_attention(c.signs, c.note, c.regions)
     c.clinical_tip = clinical_tip(
         c.category.value, c.breathing, c.responsive, c.signs, c.regions
     )

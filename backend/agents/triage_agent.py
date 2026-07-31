@@ -89,8 +89,10 @@ def _sample_scene() -> list[Casualty]:
     """A realistic four-casualty room used for offline demos and tests."""
     return [
         Casualty(id="C1", x=0.22, y=0.55, can_walk=False, breathing="rapid",
-                 responsive=False, signs=["arterial bleeding right thigh"],
-                 note="Lying still near the doorway, not moving."),
+                 responsive=False,
+                 signs=["arterial bleeding right thigh", "shrapnel wound to chest",
+                        "laceration to the head"],
+                 note="Lying still near the doorway, not moving; multiple wounds."),
         Casualty(id="C2", x=0.48, y=0.40, can_walk=False, breathing="normal",
                  responsive=True, signs=["deformed left forearm"],
                  note="Sitting against the wall, alert, holding arm."),

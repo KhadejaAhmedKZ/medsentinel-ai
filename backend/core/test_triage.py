@@ -114,6 +114,22 @@ def test_clinical_brief_flags_allergy():
     assert "penicillin" in b["risks"][0]["text"].lower()
 
 
+def test_attention_ranks_massive_bleed_first():
+    # Multi-injury casualty: arterial leg bleed + arm fracture + head laceration.
+    c = Casualty(id="C1", can_walk=False, breathing="normal", responsive=True,
+                 signs=["arterial bleeding right thigh", "deformed left forearm",
+                        "laceration to the head"])
+    triage_all([c])
+    ranks = [(a["region"], a["rank"], a["march"]) for a in c.attention]
+    top = c.attention[0]
+    assert top["region"] == "right_leg" and top["rank"] == 1 and top["march"] == "M"
+    assert top["weight"] == 100
+    # fracture should rank below the bleed
+    leg = next(a for a in c.attention if a["region"] == "right_leg")
+    arm = next(a for a in c.attention if a["region"] == "left_arm")
+    assert leg["weight"] > arm["weight"]
+
+
 def test_anatomy_word_boundary_no_false_head():
     from backend.core.anatomy import derive_regions
     # "near" contains "ear", "forearm" contains "ear" — must NOT map to head.
