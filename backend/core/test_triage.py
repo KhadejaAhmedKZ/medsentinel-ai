@@ -130,6 +130,29 @@ def test_attention_ranks_massive_bleed_first():
     assert leg["weight"] > arm["weight"]
 
 
+def test_consult_team_assembles_by_injury():
+    # Bleed + chest wound + head injury + rapid breathing -> multi-specialist panel.
+    c = Casualty(id="C1", can_walk=False, breathing="rapid", responsive=False,
+                 signs=["arterial bleeding right thigh", "shrapnel wound to chest",
+                        "laceration to the head"])
+    triage_all([c])
+    fields = [s["field"] for s in c.consult]
+    assert any("Haemorrhage" in f for f in fields)
+    assert any("Thoracic" in f for f in fields)
+    assert any("Head" in f for f in fields)
+    assert any("Airway" in f for f in fields)          # rapid breathing
+    assert fields[-1].startswith("General")            # general coordinates, last
+    # most-critical specialist first
+    assert "Haemorrhage" in c.consult[0]["field"]
+
+
+def test_consult_team_empty_for_expectant():
+    c = Casualty(id="C4", can_walk=False, breathing="absent", responsive=False,
+                 signs=["no movement"])
+    triage_all([c])
+    assert c.consult == []
+
+
 def test_anatomy_word_boundary_no_false_head():
     from backend.core.anatomy import derive_regions
     # "near" contains "ear", "forearm" contains "ear" — must NOT map to head.

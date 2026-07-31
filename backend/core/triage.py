@@ -25,6 +25,7 @@ from enum import Enum
 from backend.core.anatomy import derive_regions
 from backend.core.attention import region_attention
 from backend.core.clinical import clinical_tip
+from backend.core.specialists import consult_team
 
 
 class Category(str, Enum):
@@ -65,6 +66,7 @@ class Casualty:
     rationale: str = ""
     regions: list[str] = field(default_factory=list)  # body-map regions
     attention: list = field(default_factory=list)     # ranked "treat first" regions
+    consult: list = field(default_factory=list)       # activated specialist team
     clinical_tip: str = ""                # Dr. Sentinel MARCH prompt
 
     def to_dict(self) -> dict:
@@ -125,6 +127,7 @@ def score(c: Casualty) -> Casualty:
     # Body-map regions + ranked attention + Dr. Sentinel clinical prompt.
     c.regions = derive_regions(c.signs, c.note)
     c.attention = region_attention(c.signs, c.note, c.regions)
+    c.consult = consult_team(c.category.value, c.signs, c.note, c.breathing, c.responsive)
     c.clinical_tip = clinical_tip(
         c.category.value, c.breathing, c.responsive, c.signs, c.regions
     )

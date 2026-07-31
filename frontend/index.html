@@ -241,6 +241,17 @@
   .attn-march { font-weight: 800; color: var(--accent); }
   .attn-sign { color: var(--dim); }
 
+  /* specialist consult team */
+  .roster-chip { background: var(--panel); border: 1px solid var(--line2); border-radius: 20px;
+    padding: 3px 10px; font-size: 12px; }
+  .consult { background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 8px 11px; margin-bottom: 7px; }
+  .consult-hd { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+  .consult-emoji { font-size: 16px; }
+  .consult-name { color: var(--muted); }
+  .consult-for { color: var(--dim); font-size: 11px; margin-left: auto; }
+  .consult-rec { font-size: 12.5px; margin-top: 4px; opacity: .92; }
+
   /* treat mode */
   .overlay.treat { align-items: flex-start; justify-content: center; overflow-y: auto; padding: 20px; }
   .treatcard { background: var(--panel); border: 1px solid var(--line2); border-radius: 16px;
@@ -292,6 +303,7 @@
     </button>
   </div>
   <div class="team">Digital team: 🧭 Scout · 🎯 Triage · 🩺 Dr. Sentinel · ✍️ Scribe · 🛡️ Guardian · 🛰️ Overseer · 📦 Logistician · 🏛️ Architect</div>
+  <div class="team">Specialist consult team (per casualty): 🩸 Vascular · 🫁 Airway · 🫀 Thoracic · 🧠 Neuro · 🔥 Burns · 🦴 Orthopaedics · 💉 General trauma</div>
   <div class="namebox"><input id="nameInput" placeholder="Your name (optional)" /></div>
   <div class="disclaimer">
     Simulation / training decision-support prototype for START mass-casualty triage.
@@ -494,6 +506,43 @@ const ENGINE = (() => {
       if(!best)best=Object.assign({},DEFAULT_INJ,{sign:"",region}); ranked.push(best); }
     ranked.sort((a,b)=>b.weight-a.weight); ranked.forEach((it,i)=>it.rank=i+1); return ranked;
   }
+  const SPECIALISTS = [
+    {key:"hemorrhage",name:"Dr. Vale",field:"Vascular & Haemorrhage",emoji:"🩸",priority:100,
+     triggers:["arterial","spurting","amputat","massive","bleed","blood","haemorrhage","hemorrhage"],
+     rec:"Massive-haemorrhage first: tourniquet 5–7 cm proximal, high & tight; if junctional, pack with haemostatic gauze + 3 min direct pressure. Mark the TQ time and reassess the distal pulse."},
+    {key:"airway",name:"Dr. Reyes",field:"Airway & Anaesthesia",emoji:"🫁",priority:92,
+     triggers:["airway","choking","obstruct","not breathing"],
+     rec:"Secure the airway: jaw-thrust/chin-lift, clear obstruction, NPA if tolerated, position for drainage. Prepare a surgical airway if you cannot ventilate."},
+    {key:"thoracic",name:"Dr. Chen",field:"Thoracic & Trauma Surgery",emoji:"🫀",priority:85,
+     triggers:["chest","sucking chest","pneumothorax","tension","thorax","rib","flail","penetrat","gunshot","gsw","shrapnel","frag"],
+     rec:"Apply a vented chest seal to any open wound. Watch for tension pneumothorax (rising distress, absent breath sounds, tracheal shift) and needle-decompress 2nd ICS mid-clavicular if it develops."},
+    {key:"neuro",name:"Dr. Ilic",field:"Neurosurgery & Head Injury",emoji:"🧠",priority:70,
+     triggers:["head","skull","cranial","unconscious","concussion","brain"],
+     rec:"Protect the airway and C-spine, keep the head neutral, elevate 30° if no spinal concern. Track GCS/AVPU — a falling conscious level is a surgical emergency; expedite evacuation."},
+    {key:"burns",name:"Dr. Haddad",field:"Burns & Plastics",emoji:"🔥",priority:55,
+     triggers:["burn","scald"],
+     rec:"Stop the burning, remove hot clothing/jewellery, cover with a clean dry dressing. Estimate %TBSA (rule of nines), begin fluid planning, and watch for airway burns if facial/inhalation."},
+    {key:"ortho",name:"Dr. Okafor",field:"Orthopaedics",emoji:"🦴",priority:42,
+     triggers:["deformed","fracture","broken","dislocat","femur","tibia"],
+     rec:"Splint in the position of function, immobilise the joint above and below, and recheck distal pulse/sensation before and after. Consider a traction splint for a mid-shaft femur."},
+  ];
+  const GENERAL = {name:"Dr. Novak",field:"General Trauma & Combat Medicine",emoji:"💉",priority:20,
+    rec:"Coordinate the MARCH sweep, expose and log every wound, prevent hypothermia, reassess vitals every few minutes, and prepare a clear evac handover."};
+  function consultTeam(category, signs, note, breathing, responsive){
+    if(category==="BLACK") return [];
+    const text=(signs.join(" ")+" "+(note||"")).toLowerCase(); const panel=[];
+    for(const sp of SPECIALISTS){
+      const findings=signs.filter(s=>sp.triggers.some(t=>s.toLowerCase().includes(t)));
+      const keyword=findings.length||sp.triggers.some(t=>text.includes(t));
+      const vital=(sp.key==="airway"&&(breathing==="absent"||breathing==="rapid"))||(sp.key==="neuro"&&responsive===false);
+      if(keyword||vital){
+        const reason=findings.length?findings.join("; "):(sp.key==="airway"?"respiratory distress":sp.key==="neuro"?"altered consciousness":"on assessment");
+        panel.push({name:sp.name,field:sp.field,emoji:sp.emoji,priority:sp.priority,recommendation:sp.rec,reason});
+      }
+    }
+    panel.push({name:GENERAL.name,field:GENERAL.field,emoji:GENERAL.emoji,priority:GENERAL.priority,recommendation:GENERAL.rec,reason:"baseline coordination"});
+    panel.sort((a,b)=>b.priority-a.priority); return panel;
+  }
   function score(c) {
     const st = (c.signs.join(" ")+" "+(c.note||"")).toLowerCase();
     const crit = CRITICAL.some(k=>st.includes(k));
@@ -508,6 +557,7 @@ const ENGINE = (() => {
     c.category=cat; c.rationale=rat; c.priority=Math.min(CAT[cat].base+bump,100);
     c.regions=deriveRegions(c.signs,c.note||""); c.label=CAT[cat].label;
     c.attention=regionAttention(c.signs,c.note||"",c.regions);
+    c.consult=consultTeam(cat,c.signs,c.note||"",c.breathing,c.responsive);
     c.clinical_tip=clinicalTip(cat,c.breathing,c.responsive,c.signs,c.regions);
     return c;
   }
@@ -863,6 +913,7 @@ function medicCard(c) {
         <div class="tip"><b>🩺 Dr. Sentinel:</b> ${esc(c.clinical_tip)}</div>
         ${attentionList(c)}
       </div></div>
+    ${consultRoster(c)}
     ${nfcPanel(c)}
     ${scribePanel(c)}
     ${tqTimerHTML(c.id)}
@@ -986,6 +1037,7 @@ function renderTreat(){
           ${top?`<div class="treat-first lvl-${top.level}">⚡ <b>Treat first — ${regionLabel(top.region)}:</b> ${esc(top.action)}</div>`:''}
           ${attentionList(c)}
           <div class="tip"><b>🩺 Dr. Sentinel:</b> ${esc(c.clinical_tip)}</div>
+          ${consultPanel(c)}
           ${tqTimerHTML(c.id)}
           ${nfcPanel(c)}
           ${scribePanel(c)}
@@ -1192,6 +1244,20 @@ function attentionList(c){
       ${x.sign?`<div class="attn-sign">${esc(x.sign)}</div>`:''}</div></div>`).join("")}</div>`;
 }
 function speak(text){ try { const u=new SpeechSynthesisUtterance(text); u.rate=1; window.speechSynthesis.cancel(); window.speechSynthesis.speak(u); } catch(e){} }
+function consultRoster(c){
+  const team = c.consult || []; if (!team.length) return "";
+  return `<div class="subpanel"><div class="lbl">🧑‍⚕️ Specialist consult team · ${team.length} on call</div>
+    <div class="tagrow">${team.map(s=>`<span class="roster-chip">${s.emoji} ${esc(s.field.split(" ")[0])}</span>`).join("")}
+    <span class="hint">open Treat mode for full consults</span></div></div>`;
+}
+function consultPanel(c){
+  const team = c.consult || []; if (!team.length) return "";
+  return `<div class="subpanel"><div class="lbl">🧑‍⚕️ Specialist consult team · ${team.length} on call</div>
+    ${team.map(s=>`<div class="consult"><div class="consult-hd"><span class="consult-emoji">${s.emoji}</span>
+      <b>${esc(s.field)}</b> <span class="consult-name">${esc(s.name)}</span>
+      <span class="consult-for">for: ${esc(s.reason)}</span></div>
+      <div class="consult-rec">${esc(s.recommendation)}</div></div>`).join("")}</div>`;
+}
 
 /* ---------------- soldier ---------------- */
 async function renderSoldier(){
