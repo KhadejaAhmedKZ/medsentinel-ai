@@ -3,6 +3,12 @@
 **Multi-agent, camera-driven mass-casualty triage & medical-team allocation — a
 decision-support prototype.**
 
+### ▶️ Live demo: https://khadejaahmedkz.github.io/medsentinel-ai/
+
+The live demo runs **entirely in your browser** (no server, no sign-in) on a
+built-in sample scene — pick a role and explore. For live image analysis, run
+the backend locally with a `GEMINI_API_KEY` (see below).
+
 Point a camera at a scene of injured people. MEDSENTINEL detects each casualty,
 scores them with the international **START** triage protocol
 (🔴 Immediate / 🟡 Delayed / 🟢 Minor / ⚫ Expectant), ranks them most-urgent-first,
