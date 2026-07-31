@@ -283,7 +283,7 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const API = "";
-const state = { role: null, name: "", scan: null, aiOnline: false,
+const state = { role: null, name: "", scan: null, aiOnline: false, staticMode: false,
   soldiers: [], soldierId: null,
   notes: {}, nfc: {}, treated: {}, audit: [],
   workload: { start: Date.now(), cases: 0, reds: 0 } };
@@ -338,10 +338,205 @@ function exportMission() {
   document.body.appendChild(a); a.click(); a.remove();
 }
 
+/* ============================================================
+   ENGINE — in-browser port of the backend pipeline. Lets the
+   whole app run with NO server (e.g. on GitHub Pages). The
+   frontend falls back to this whenever /api is unreachable.
+   Mirrors backend/core/{triage,anatomy,clinical,allocation,
+   logistics,scout}.py exactly.
+   ============================================================ */
+const ENGINE = (() => {
+  const SOLDIERS = [
+    { id:"SD-4471", name:"Cpl. A. Rahman", rank:"Corporal", unit:"2nd Field Company",
+      blood_type:"O+", allergies:["Penicillin"], medications:["None"], conditions:["Mild asthma"],
+      last_updated:"2026-05-12", notes:"Carries a personal tourniquet, left cargo pocket.",
+      emergency_contact:{ name:"F. Rahman (spouse)", phone:"+000 111 2233" } },
+    { id:"SD-3820", name:"Sgt. L. Osei", rank:"Sergeant", unit:"1st Recon Platoon",
+      blood_type:"A-", allergies:["Latex","Sulfa drugs"], medications:["Lisinopril 10mg"], conditions:["Hypertension"],
+      last_updated:"2026-06-30", notes:"Prior right-knee reconstruction (2024).",
+      emergency_contact:{ name:"K. Osei (brother)", phone:"+000 444 5566" } },
+    { id:"SD-9155", name:"Pvt. M. Haddad", rank:"Private", unit:"3rd Support Company",
+      blood_type:"B+", allergies:["None known"], medications:["None"], conditions:["None"],
+      last_updated:"2026-07-19", notes:"No significant medical history.",
+      emergency_contact:{ name:"S. Haddad (mother)", phone:"+000 777 8899" } },
+  ];
+  const SAMPLE_HAZARDS = ["Structural debris near entrance", "Limited cover on the open right side"];
+  const CAT = { RED:{label:"Immediate",base:90}, YELLOW:{label:"Delayed",base:55},
+                GREEN:{label:"Minor",base:25}, BLACK:{label:"Expectant",base:5} };
+  const CRITICAL = ["arterial","spurting","massive bleed","amputation","amputated","not breathing","unconscious","unresponsive","sucking chest"];
+  const PARTS = {
+    head:["head","skull","face","facial","jaw","eye","ear","scalp","cranial","nose","forehead"],
+    neck:["neck","throat","cervical"],
+    chest:["chest","thorax","thoracic","rib","sternum","lung","breast","clavicle","shoulder","collarbone"],
+    abdomen:["abdomen","abdominal","stomach","belly","pelvis","pelvic","groin","flank","hip"],
+    arm:["arm","forearm","upperarm","elbow","hand","wrist","bicep","tricep","finger"],
+    leg:["leg","thigh","knee","shin","calf","foot","ankle","femur","fibula","tibia","toe"],
+  };
+  const BLEED = ["bleed","blood","haemorrhage","hemorrhage","arterial","spurting","amputat"];
+  const LIMBS = ["left_arm","right_arm","left_leg","right_leg"];
+  const ALLERGY_G = {
+    penicillin:"Avoid penicillins (amoxicillin, ampicillin, flucloxacillin); use a non-beta-lactam alternative.",
+    sulfa:"Avoid sulfonamide antibiotics (e.g. co-trimoxazole).",
+    latex:"Use latex-free gloves, tourniquets and dressings.",
+    morphine:"Avoid morphine; consider an alternative analgesic per protocol.",
+    aspirin:"Avoid aspirin/NSAIDs; consider paracetamol per protocol.",
+    iodine:"Avoid iodine-based antiseptics; use chlorhexidine.",
+  };
+  const COND_G = {
+    asthma:"Asthma — watch respiratory effort; avoid known triggers.",
+    hypertension:"Hypertension — expect altered baseline BP; note home meds.",
+    diabet:"Diabetes — check blood glucose; consider hypo/hyperglycaemia.",
+    epilep:"Epilepsy — seizure precautions.",
+    haemophil:"Bleeding disorder — haemorrhage control is higher priority.",
+    hemophil:"Bleeding disorder — haemorrhage control is higher priority.",
+  };
+  const INV = { tourniquets:6, blood_packs:4, litters:3, iv_kits:8, chest_seals:5 };
+  const DEMAND = { RED:{tourniquets:1,blood_packs:1,litters:1,iv_kits:1,chest_seals:1},
+                   YELLOW:{litters:1,iv_kits:1}, GREEN:{}, BLACK:{} };
+  const LABELS = { tourniquets:"Tourniquets", blood_packs:"Blood packs", litters:"Litters",
+                   iv_kits:"IV kits", chest_seals:"Chest seals" };
+  const DEFER = "Confirm against your protocol — you make the final call.";
+
+  const sampleScene = () => ([
+    { id:"C1", x:.22, y:.55, can_walk:false, breathing:"rapid", responsive:false,
+      signs:["arterial bleeding right thigh"], note:"Lying still near the doorway, not moving." },
+    { id:"C2", x:.48, y:.40, can_walk:false, breathing:"normal", responsive:true,
+      signs:["deformed left forearm"], note:"Sitting against the wall, alert, holding arm." },
+    { id:"C3", x:.70, y:.62, can_walk:true, breathing:"normal", responsive:true,
+      signs:["minor facial cut"], note:"Standing, walking, mild bleeding to face." },
+    { id:"C4", x:.86, y:.35, can_walk:false, breathing:"absent", responsive:false,
+      signs:["no movement","no respiration"], note:"Prone, no observable breathing after airway." },
+  ]);
+  const sideOf = (p) => p.includes("left") ? "left" : p.includes("right") ? "right" : "right";
+  function deriveRegions(signs, note) {
+    const phrases = signs.map(s=>s.toLowerCase()); if (note) phrases.push(note.toLowerCase());
+    const found = [];
+    for (const ph of phrases) for (const part in PARTS)
+      if (PARTS[part].some(w => new RegExp("\\b"+w).test(ph))) {
+        const reg = (part==="arm"||part==="leg") ? sideOf(ph)+"_"+part : part;
+        if (!found.includes(reg)) found.push(reg);
+      }
+    return found;
+  }
+  function clinicalTip(cat, breathing, responsive, signs, regions) {
+    const text = signs.join(" ").toLowerCase();
+    if (cat==="BLACK") return "Expectant under START: no spontaneous breathing after airway positioning. Do not commit resources while savable casualties wait; reassess only if the situation changes. "+DEFER;
+    const tips=[];
+    if (BLEED.some(w=>text.includes(w)))
+      tips.push(regions.some(r=>LIMBS.includes(r))
+        ? "M — Massive haemorrhage: apply a tourniquet high and tight on the affected limb; note the time."
+        : "M — Massive haemorrhage: wound-pack and apply firm direct pressure.");
+    if (breathing==="rapid"||regions.includes("chest")||text.includes("chest"))
+      tips.push("R — Respiration: assess for tension pneumothorax; seal any open chest wound.");
+    if (responsive===false||regions.includes("head")||regions.includes("neck"))
+      tips.push("A — Airway: protect the airway, consider recovery position, and monitor consciousness.");
+    if (cat==="RED"&&!tips.length) tips.push("Immediate: work the MARCH sequence and reassess vitals frequently.");
+    if (cat==="YELLOW"&&!tips.length) tips.push("Delayed: splint and immobilise, control minor bleeding, watch for deterioration.");
+    if (cat==="GREEN"&&!tips.length) tips.push("Minor: self- or buddy-aid; direct to the collection point; recheck if status changes.");
+    return tips.slice(0,3).join(" ")+" "+DEFER;
+  }
+  function score(c) {
+    const st = (c.signs.join(" ")+" "+(c.note||"")).toLowerCase();
+    const crit = CRITICAL.some(k=>st.includes(k));
+    let cat, rat;
+    if (c.breathing==="absent") { cat="BLACK"; rat="No spontaneous breathing observed (expectant under START)."; }
+    else if (c.can_walk && !crit) { cat="GREEN"; rat="Able to walk — minor / walking wounded."; }
+    else if (c.breathing==="rapid") { cat="RED"; rat="Rapid respiration (>30/min) — immediate."; }
+    else if (c.responsive===false) { cat="RED"; rat="Does not obey commands / altered consciousness — immediate."; }
+    else if (crit) { cat="RED"; rat="Life-threatening sign observed — immediate."; }
+    else { cat="YELLOW"; rat="Serious but currently stable — delayed."; }
+    let bump = Math.min(c.signs.length*3, 9); if (crit&&cat==="RED") bump+=5;
+    c.category=cat; c.rationale=rat; c.priority=Math.min(CAT[cat].base+bump,100);
+    c.regions=deriveRegions(c.signs,c.note||""); c.label=CAT[cat].label;
+    c.clinical_tip=clinicalTip(cat,c.breathing,c.responsive,c.signs,c.regions);
+    return c;
+  }
+  const triageAll = (cs) => { cs.forEach(score); return cs.sort((a,b)=>b.priority-a.priority); };
+  const summarize = (cs) => { const counts={RED:0,YELLOW:0,GREEN:0,BLACK:0}; cs.forEach(c=>counts[c.category]++); return {total:cs.length,counts}; };
+  const sector = (x) => x==null ? "centre" : x<.34 ? "left" : x>.66 ? "right" : "centre";
+  function scout(cs, hz) {
+    hz=(hz||[]).slice(0,6); const sectors={left:0,centre:0,right:0};
+    cs.forEach(c=>sectors[sector(c.x)]++);
+    const reds=cs.filter(c=>c.category==="RED"); const focus=reds[0]||cs[0]||null;
+    const fs=focus?sector(focus.x):"centre"; const ht=hz.join(" ").toLowerCase();
+    let hsd=null; ["left","right"].forEach(s=>{ if(ht.includes(s))hsd=s; });
+    let ap;
+    if (focus&&hsd&&hsd===fs) ap=`Highest-priority casualty (${focus.id}) is on the ${fs}, but hazards are also there — approach with caution and clear the hazard or use cover.`;
+    else if (focus) ap=`Approach from the ${fs}: highest-priority casualty (${focus.id}) is there.`;
+    else ap="No casualties detected — hold and reassess.";
+    if (hsd&&(!focus||hsd!==fs)) ap+=` Keep clear of the ${hsd} — hazards present.`;
+    return { hazards:hz, hazard_count:hz.length, approach:ap, sectors };
+  }
+  function allocate(cs, front, back) {
+    const reds=cs.filter(c=>c.category==="RED"), ys=cs.filter(c=>c.category==="YELLOW"),
+          gs=cs.filter(c=>c.category==="GREEN"), bs=cs.filter(c=>c.category==="BLACK");
+    const A=[], fq=[]; let mn=1, af=Math.max(front,0);
+    reds.forEach(c=>{ if(af>0){A.push({medic:`Front Medic ${mn}`,line:"front",casualty_id:c.id,category:c.category,priority:c.priority,task:"Immediate stabilisation (control bleeding / airway)."});mn++;af--;}
+      else fq.push({casualty_id:c.id,category:c.category,priority:c.priority,task:"Awaiting free front-line medic — highest priority."}); });
+    let bn=1, yi=0;
+    while(af>0&&yi<ys.length){const c=ys[yi];A.push({medic:`Front Medic ${mn}`,line:"back",casualty_id:c.id,category:c.category,priority:c.priority,task:"Delayed care — reassess and treat."});mn++;af--;yi++;}
+    let ab=Math.max(back,0);
+    while(ab>0&&yi<ys.length){const c=ys[yi];A.push({medic:`Back Medic ${bn}`,line:"back",casualty_id:c.id,category:c.category,priority:c.priority,task:"Delayed care — reassess and treat."});bn++;ab--;yi++;}
+    const bq=ys.slice(yi).map(c=>({casualty_id:c.id,category:c.category,priority:c.priority,task:"Delayed — awaiting back-line medic."}));
+    const cp=gs.map(c=>({casualty_id:c.id,category:c.category,task:"Direct to casualty collection point; self-evacuate if able."}));
+    const ex=bs.map(c=>({casualty_id:c.id,category:c.category,task:"Document. Reassess only if resources free up."}));
+    let advice;
+    if(reds.length===0) advice="No immediate (RED) casualties. Front line can support back-line care.";
+    else if(fq.length>0) advice=`${fq.length} immediate casualty(ies) have no free medic. Request reinforcement or accelerate evacuation of stabilised RED cases.`;
+    else advice=`All ${reds.length} immediate casualties have a front-line medic assigned.`;
+    return { front_line_medics:front, back_line_medics:back, assignments:A, front_line_queue:fq,
+             back_line_queue:bq, collection_point:cp, expectant:ex, unassigned_red:fq.length, advice };
+  }
+  function readiness(cs, inv) {
+    inv=Object.assign({}, inv||INV); const need={}; Object.keys(inv).forEach(k=>need[k]=0);
+    cs.forEach(c=>{ const d=DEMAND[c.category]||{}; Object.keys(d).forEach(it=>need[it]=(need[it]||0)+d[it]); });
+    const items=[]; let worst="ok";
+    Object.keys(inv).forEach(key=>{ const have=inv[key], want=need[key]||0;
+      let st = want===0?"ok" : have>=want?"ok" : have>=want*.5?"low" : "critical";
+      if(st==="critical"||(st==="low"&&worst!=="critical")) worst=st;
+      items.push({item:LABELS[key]||key, have, need:want, status:st}); });
+    return { status:worst, items };
+  }
+  function evac(cs) {
+    const reds=cs.filter(c=>c.category==="RED"), ys=cs.filter(c=>c.category==="YELLOW"); const lines=[];
+    reds.forEach((c,i)=>lines.push({casualty_id:c.id,precedence:"URGENT",status:i===0?"Priority MEDEVAC requested":"MEDEVAC requested",eta_min:10+i*5}));
+    ys.forEach(c=>lines.push({casualty_id:c.id,precedence:"ROUTINE",status:"Routine evacuation",eta_min:null}));
+    return { urgent:reds.length, routine:ys.length, litters_required:reds.length+ys.length, lines };
+  }
+  const overseerText = (sm, plan) => { const c=sm.counts;
+    return `${sm.total} casualties: ${c.RED} immediate, ${c.YELLOW} delayed, ${c.GREEN} minor, ${c.BLACK} expectant. ${plan.advice}`; };
+  function scan(front, back) {
+    const cs=triageAll(sampleScene()); const sm=summarize(cs); const plan=allocate(cs,front,back);
+    return { used_ai:false, scene_note:"Static demo — running entirely in your browser on a built-in sample scene.",
+      summary:sm, casualties:cs, allocation:plan, overseer:overseerText(sm,plan),
+      scout:scout(cs,SAMPLE_HAZARDS), readiness:readiness(cs), evacuation:evac(cs), agents:[] };
+  }
+  function brief(id) {
+    const s=SOLDIERS.find(x=>x.id===id); if(!s) return null;
+    const allergies=s.allergies.filter(a=>a&&!["none","none known"].includes(a.toLowerCase()));
+    const meds=s.medications.filter(m=>m&&m.toLowerCase()!=="none");
+    const conds=s.conditions.filter(c=>c&&c.toLowerCase()!=="none");
+    const parts=[s.name,"blood "+s.blood_type];
+    if(allergies.length) parts.push("allergies: "+allergies.join(", "));
+    if(conds.length) parts.push("history: "+conds.join(", "));
+    const risks=[];
+    allergies.forEach(a=>{ const low=a.toLowerCase(); let g=null; for(const k in ALLERGY_G){ if(low.includes(k)){g=ALLERGY_G[k];break;} }
+      risks.push({level:"critical", text:"⚠️ Allergy: "+a+"."+(g?" "+g:" Confirm before administering any medication.")}); });
+    conds.forEach(c=>{ const low=c.toLowerCase(); for(const k in COND_G){ if(low.includes(k)){risks.push({level:"caution",text:COND_G[k]});break;} } });
+    if(meds.length) risks.push({level:"caution", text:"On medication: "+meds.join(", ")+" — check for interactions."});
+    return { summary:parts.join(" · ")+".", risks, emergency_contact:s.emergency_contact, id:s.id, name:s.name, blood_type:s.blood_type };
+  }
+  return { SOLDIERS, scan, brief };
+})();
+
 async function boot() {
   loadState();
-  try { state.aiOnline = (await (await fetch(API+"/api/agents")).json()).ai_online; }
-  catch (e) { state.aiOnline = false; }
+  try {
+    const r = await fetch(API+"/api/agents");
+    if (r.ok) { state.aiOnline = (await r.json()).ai_online; state.staticMode = false; }
+    else throw new Error("no api");
+  } catch (e) { state.staticMode = true; state.aiOnline = false; }
+  if (state.staticMode) state.soldiers = ENGINE.SOLDIERS;
 }
 boot();
 
@@ -352,8 +547,8 @@ function login(role) {
   $("rolePill").textContent = ROLE_LABEL[role];
   $("whoami").textContent = state.name || "";
   const b = $("aiBadge");
-  b.textContent = state.aiOnline ? "AI online" : "Offline mode";
-  b.className = "badge " + (state.aiOnline ? "on" : "off");
+  if (state.staticMode) { b.textContent = "Live demo"; b.className = "badge on"; }
+  else { b.textContent = state.aiOnline ? "AI online" : "Offline mode"; b.className = "badge " + (state.aiOnline ? "on" : "off"); }
   renderView();
 }
 function logout() { stopDictation(); stopCamera(); state.role = null;
@@ -425,14 +620,22 @@ async function doScan() {
 }
 async function runScan(imageBlob) {
   const btn = $("scanBtn"); if (btn){ btn.disabled = true; btn.textContent = "Scanning…"; }
-  const fd = new FormData();
-  if (imageBlob) fd.append("image", imageBlob, "scene.jpg");
-  fd.append("front_medics", ($("front") ? $("front").value : 2) || 0);
-  fd.append("back_medics", ($("back") ? $("back").value : 1) || 0);
+  const front = parseInt(($("front") ? $("front").value : 2) || 0);
+  const back = parseInt(($("back") ? $("back").value : 1) || 0);
   try {
-    const r = await fetch(API+"/api/scan", { method: "POST", body: fd });
-    if (!r.ok) throw new Error(await r.text());
-    state.scan = await r.json();
+    if (state.staticMode) {
+      // No server on GitHub Pages: run the pipeline in the browser on the
+      // sample scene (an uploaded/captured image can't reach live vision here).
+      lastHadImage = false;
+      state.scan = ENGINE.scan(front, back);
+    } else {
+      const fd = new FormData();
+      if (imageBlob) fd.append("image", imageBlob, "scene.jpg");
+      fd.append("front_medics", front); fd.append("back_medics", back);
+      const r = await fetch(API+"/api/scan", { method: "POST", body: fd });
+      if (!r.ok) throw new Error(await r.text());
+      state.scan = await r.json();
+    }
     saveState();
     renderResults();
   } catch (e) { alert("Scan failed: " + e.message); }
@@ -598,7 +801,9 @@ function nfcPanel(c) {
 }
 async function nfcScan(casualtyId, soldierId) {
   try {
-    const b = await (await fetch(API+`/api/soldiers/${soldierId}/brief`)).json();
+    const b = state.staticMode ? ENGINE.brief(soldierId)
+      : await (await fetch(API+`/api/soldiers/${soldierId}/brief`)).json();
+    if (!b) throw new Error("record not found");
     state.nfc[casualtyId] = b;
     state.audit.push({ t: nowTime(), type: "nfc",
       detail: `NFC tag ${b.id} (${b.name}) read for casualty ${casualtyId} by ${state.name||"medic"}.` });
@@ -808,10 +1013,10 @@ function bodyMap(regions, color){
 async function renderSoldier(){
   const v = $("view");
   if (!state.soldiers.length) {
-    try { state.soldiers = (await (await fetch(API+"/api/soldiers")).json()).soldiers; }
-    catch(e){ v.innerHTML = `<div class="empty">Could not load soldier records.</div>`; return; }
-    state.soldierId = state.soldiers[0].id;
+    try { const r = await fetch(API+"/api/soldiers"); state.soldiers = r.ok ? (await r.json()).soldiers : ENGINE.SOLDIERS; }
+    catch(e){ state.soldiers = ENGINE.SOLDIERS; }
   }
+  if (!state.soldierId && state.soldiers[0]) state.soldierId = state.soldiers[0].id;
   const s = state.soldiers.find(x=>x.id===state.soldierId) || state.soldiers[0];
   const ec = s.emergency_contact;
   v.innerHTML = `
@@ -839,8 +1044,8 @@ function idrow(k,v,alert){ return `<div class="idrow"><span class="k">${k}</span
 function nowTime(){ return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
 function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
 
-/* preload soldiers so the medic NFC buttons are ready */
-(async()=>{ try { state.soldiers = (await (await fetch(API+"/api/soldiers")).json()).soldiers; } catch(e){} })();
+/* preload soldiers so the medic NFC buttons are ready (backend or engine) */
+(async()=>{ try { const r = await fetch(API+"/api/soldiers"); if (r.ok) { state.soldiers = (await r.json()).soldiers; return; } } catch(e){} state.soldiers = ENGINE.SOLDIERS; })();
 </script>
 </body>
 </html>
