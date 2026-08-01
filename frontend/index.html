@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>MEDSENTINEL AI — Casualty Triage & Team Allocation</title>
+<title>NAJDA — Casualty Triage & Team Allocation</title>
 <style>
   :root {
     --bg: #0a0e14; --bg2: #0d1117; --panel: #141b24; --panel2: #1a222d;
@@ -306,7 +306,7 @@
 
 <!-- ===================== LOGIN ===================== -->
 <div id="login">
-  <div class="brand">MED<span>SENTINEL</span> AI</div>
+  <div class="brand">NAJ<span>DA</span></div>
   <div class="sub">Camera-driven mass-casualty triage &amp; medical-team allocation</div>
   <div class="roles">
     <button class="role" onclick="login('medic')">
@@ -335,7 +335,7 @@
 <!-- ===================== APP ===================== -->
 <div id="app">
   <header>
-    <div class="logo">MED<span>SENTINEL</span></div>
+    <div class="logo">NAJ<span>DA</span></div>
     <span class="role-pill" id="rolePill"></span>
     <span class="badge off" id="aiBadge">·</span>
     <div class="spacer"></div>
@@ -847,7 +847,7 @@ function nineLine() {
   L.push("Line 8  Patient nationality ..... __________");
   L.push("Line 9  NBC / terrain ........... __________");
   L.push("");
-  L.push(`Prepared by ${state.name||"-"} at ${new Date().toISOString()} — MEDSENTINEL (decision-support draft).`);
+  L.push(`Prepared by ${state.name||"-"} at ${new Date().toISOString()} — NAJDA (decision-support draft).`);
   const blob = new Blob([L.join("\n")], { type: "text/plain" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob); a.download = "medevac_9line.txt";
@@ -855,7 +855,7 @@ function nineLine() {
 }
 function downloadAAR() {
   const s = aarStats(); const d = state.scan; const L = [];
-  L.push("MEDSENTINEL AI — AFTER-ACTION REVIEW (Architect)");
+  L.push("NAJDA — AFTER-ACTION REVIEW (Architect)");
   L.push("=================================================");
   L.push(`Generated: ${new Date().toISOString()}   Commander: ${state.name||"-"}`);
   L.push("");
@@ -1100,7 +1100,7 @@ async function generateReport(id) {
   const c = state.scan.casualties.find(x=>x.id===id); if(!c) return;
   const b = state.nfc[id]; const notes = state.notes[id] || [];
   const L = [];
-  L.push("MEDSENTINEL AI — CASUALTY REPORT");
+  L.push("NAJDA — CASUALTY REPORT");
   L.push("=================================");
   L.push(`Casualty: ${c.id}   Triage: ${c.category} (${c.label})   Priority: ${c.priority}`);
   L.push(`Generated: ${new Date().toISOString()}   Medic: ${state.name||"-"}`);
